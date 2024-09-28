@@ -9,7 +9,7 @@ function App() {
   return (
     <>
       <hr/>
-      <h1>LARMINAR</h1>
+      <h1>LAMINAR</h1>
       <hr/>
     </>
   )

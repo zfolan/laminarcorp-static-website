@@ -11,7 +11,6 @@ function App() {
           {/* <Route index element={<div>yikes</div>}/> */}
         </Route>
         <Route path="/Idaho" element={<Idaho></Idaho>}></Route>
-        <Route path="/Cooper" element={<Idaho></Idaho>}></Route>
       </Routes>
     </BrowserRouter>
   )

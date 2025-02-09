@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#f0f9ff"/>
+  
+  <!-- Mountains representing Idaho's landscape -->
+  <path d="M40 140 L100 60 L160 140" fill="#4b5563" stroke="none"/>
+  <path d="M60 140 L100 80 L140 140" fill="#6b7280" stroke="none"/>
+  
+  <!-- Stylized "I" -->
+  <rect x="90" y="100" width="20" height="60" fill="#1d4ed8"/>
+  <rect x="80" y="90" width="40" height="15" fill="#1d4ed8"/>
+  <rect x="80" y="155" width="40" height="15" fill="#1d4ed8"/>
+  
+  <!-- Small pine tree -->
+  <path d="M70 140 L80 120 L90 140" fill="#047857"/>
+  <rect x="78" y="140" width="4" height="5" fill="#422006"/>
+  
+  <!-- Decorative star -->
+  <circle cx="150" cy="80" r="3" fill="#1d4ed8"/>
+</svg>

@@ -1,5 +1,5 @@
 export const Idaho = () => {
     return (
-        <>IDAHO</>
+        <>COOPERS PAGE</>
     )
 }

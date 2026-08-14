@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Player, type PlayerRef } from '@remotion/player'
 import { HouseholdFilm } from '../remotion/HouseholdFilm'
-import { storyFrameBounds, storyMoments } from '../data/storyMoments'
+import { STORY_DURATION, storyFrameBounds, storyMoments } from '../data/storyMoments'
 
 const ScrollStory = ({ reducedMotion }: { reducedMotion: boolean }) => {
   const sectionRef = useRef<HTMLElement>(null)
@@ -26,7 +26,7 @@ const ScrollStory = ({ reducedMotion }: { reducedMotion: boolean }) => {
       const rect = section.getBoundingClientRect()
       const distance = Math.max(1, section.offsetHeight - window.innerHeight)
       const progress = Math.min(1, Math.max(0, -rect.top / distance))
-      const currentFrame = Math.min(713, Math.round(progress * 713))
+      const currentFrame = Math.min(STORY_DURATION, Math.round(progress * STORY_DURATION))
       const nextBoundary = storyFrameBounds.findIndex((bound, index) => index > 0 && currentFrame < bound)
       playerRef.current?.seekTo(currentFrame)
       setActive(nextBoundary === -1 ? storyMoments.length - 1 : nextBoundary - 1)
@@ -52,9 +52,9 @@ const ScrollStory = ({ reducedMotion }: { reducedMotion: boolean }) => {
           <Player
             ref={reducedMotion ? undefined : playerRef}
             component={HouseholdFilm}
-            durationInFrames={714}
-            compositionWidth={compact ? 1100 : 1600}
-            compositionHeight={compact ? 900 : 1000}
+            durationInFrames={STORY_DURATION + 1}
+            compositionWidth={compact ? 760 : 1600}
+            compositionHeight={compact ? 1000 : 1000}
             fps={30}
             initialFrame={reducedMotion ? 174 : 0}
             controls={false}

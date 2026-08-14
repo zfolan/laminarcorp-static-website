@@ -41,4 +41,5 @@ export const storyMoments = [
   },
 ] as const
 
-export const storyFrameBounds = [0, 96, 219, 343, 466, 590, 714] as const
+export const STORY_DURATION = 900
+export const storyFrameBounds = [0, 170, 315, 460, 605, 750, STORY_DURATION] as const

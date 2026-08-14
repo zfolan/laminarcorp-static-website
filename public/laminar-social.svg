@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#07090d"/>
+  <rect x="58" y="58" width="1084" height="514" stroke="#26313d"/>
+  <path d="M90 170h116M90 242h190M90 314h264M206 170l148 144M280 242l74 72" stroke="#5487b6" stroke-width="4" opacity=".8"/>
+  <circle cx="354" cy="314" r="7" fill="#76a6cf"/>
+  <text x="420" y="230" fill="#76a6cf" font-family="monospace" font-size="21" letter-spacing="4">LAMINAR</text>
+  <text x="420" y="310" fill="#e8edf2" font-family="Arial, sans-serif" font-size="49" font-weight="500">Portfolio strategy, carried</text>
+  <text x="420" y="370" fill="#e8edf2" font-family="Arial, sans-serif" font-size="49" font-weight="500">through to implementation.</text>
+  <text x="420" y="430" fill="#98a3af" font-family="Arial, sans-serif" font-size="22">One household. One portfolio. One connected system.</text>
+</svg>

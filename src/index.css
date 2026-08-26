@@ -456,7 +456,46 @@ button { color: inherit; }
 .stage-node--analytics { bottom: 22%; left: 42%; }
 .stage-node--quieter { opacity: 0.45; }
 .stage-node--active { border-color: var(--blue-bright); }
+.product-stage {
+  position: absolute;
+  z-index: 4;
+  top: 88px;
+  right: 8%;
+  left: 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 960px;
+  margin-inline: auto;
+}
+.product-caption {
+  margin: 0;
+  color: var(--pewter);
+  font-size: 14px;
+}
+.product-frame {
+  width: 100%;
+  max-height: calc(100svh - 220px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.scene-frame__title {
+  margin: 0 0 12px;
+  font: 500 10px/1.2 'IBM Plex Mono', monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blue-bright);
+}
 @media (max-width: 767px) {
   .stage-nodes { inset: auto 16px 20px; display: flex; gap: 8px; }
   .stage-node { position: static; flex: 1; }
+  .product-stage { top: 72px; right: 16px; left: 16px; }
+  .product-frame { max-height: calc(100svh - 180px); }
 }

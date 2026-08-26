@@ -64,6 +64,7 @@ export const HouseholdsFrame = () => (
 
       <div className="library__grid" role="list">
         <div className="library__head" aria-hidden="true">
+          <span className="library__rail-slot" />
           <span>Household</span>
           <span>Actions</span>
           <span>Models</span>
@@ -96,8 +97,10 @@ export const HouseholdsFrame = () => (
               </span>
             </div>
             <div className="library__models">
-              <span><b>EQ</b> {row.equityModel}</span>
-              <span><b>FI</b> {row.fixedIncomeModel}</span>
+              <div className="library__models-card">
+                <span><b>EQ</b> {row.equityModel}</span>
+                <span><b>FI</b> {row.fixedIncomeModel}</span>
+              </div>
             </div>
             <AllocationBars target={row.target} current={row.current} />
             <div className="library__num">{row.accounts}</div>

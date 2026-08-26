@@ -758,8 +758,18 @@ button { color: inherit; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.library__head span { padding: 0 8px; }
-.library__head span:first-child { grid-column: 2; }
+.library__head span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  text-align: center;
+}
+.library__head span:first-child {
+  grid-column: 2;
+  justify-content: flex-start;
+  text-align: left;
+}
 .library__row {
   min-height: 76px;
   border-bottom: 1px solid #202a35;

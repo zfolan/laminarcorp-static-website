@@ -542,6 +542,20 @@ button { color: inherit; }
   font-family: 'Instrument Sans', system-ui, sans-serif;
   font-size: 13px;
 }
+.scene-strip small {
+  color: var(--pewter);
+  font: 400 11px/1 'IBM Plex Mono', monospace;
+}
+.scene-account {
+  margin-top: 16px;
+}
+.scene-account__type {
+  margin: 0 0 8px;
+  color: var(--blue-bright);
+  font: 500 10px/1 'IBM Plex Mono', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 @media (max-width: 767px) {
   .stage-nodes { inset: auto 16px 20px; display: flex; gap: 8px; }
   .stage-node { position: static; flex: 1; }

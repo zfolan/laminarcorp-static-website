@@ -58,4 +58,16 @@ describe('StagePage first load', () => {
     expect(screen.queryByText('Upload CSV')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /rebalance households/i })).not.toBeInTheDocument()
   })
+
+  it('renders the reduced rebalance workspace', async () => {
+    const user = userEvent.setup()
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Rebalance' }))
+    expect(screen.getByText('RRSP')).toBeInTheDocument()
+    expect(screen.getByText('CAD TAXABLE')).toBeInTheDocument()
+    expect(screen.getByText('ZCS')).toBeInTheDocument()
+    expect(screen.getAllByText('SELL').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('BUY').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Review & validate')).not.toBeInTheDocument()
+  })
 })

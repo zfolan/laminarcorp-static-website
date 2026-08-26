@@ -27,6 +27,12 @@ describe('StagePage first load', () => {
     expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
   })
 
+  it('keeps the aether field decorative and still works when canvas context is missing', () => {
+    renderStage()
+    const field = document.querySelector('[data-aether-field]')
+    expect(field).toHaveAttribute('aria-hidden', 'true')
+  })
+
   it('opens, swaps, and closes product scenes', async () => {
     const user = userEvent.setup()
     renderStage()

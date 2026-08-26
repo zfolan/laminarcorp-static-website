@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { AccessOverlay } from '../components/stage/AccessOverlay'
+import { AetherCanvas } from '../components/stage/AetherCanvas'
 import { ProductFrame } from '../components/stage/ProductFrame'
 import { AnalyticsFrame } from '../components/stage/scenes/AnalyticsFrame'
 import { HouseholdsFrame } from '../components/stage/scenes/HouseholdsFrame'
@@ -32,6 +33,13 @@ export const StagePage = () => {
 
   return (
     <div className="stage-page">
+      <AetherCanvas
+        dimmed={state.scene !== 'none'}
+        reducedMotion={false}
+        onEmptyPointerDown={() => {
+          if (state.scene !== 'none') dispatch({ type: 'close-scene' })
+        }}
+      />
       <StageChrome onRequestAccess={() => dispatch({ type: 'open-access' })} />
       <StageNodes scene={state.scene} onSelect={(scene) => dispatch({ type: 'open-scene', scene })} />
       {state.scene !== 'none' ? (

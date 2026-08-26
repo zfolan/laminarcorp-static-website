@@ -32,7 +32,13 @@ export const StagePage = () => {
 
   const scrollToScene = (scene: SceneId) => {
     document.getElementById(scene)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
+    window.history.replaceState(null, '', `#${scene}`)
   }
+
+  useEffect(() => {
+    const id = location.hash.replace('#', '')
+    if (id) document.getElementById(id)?.scrollIntoView({ behavior: 'auto' })
+  }, [location.hash])
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>

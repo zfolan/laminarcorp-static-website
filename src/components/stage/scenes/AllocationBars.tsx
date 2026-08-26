@@ -1,22 +1,33 @@
 import type { SleeveWeights } from '../../../data/stageBook'
 
-const pct = (value: number) => `${Math.round(value * 1000) / 10}%`
+const pct = (value: number) => `${(value * 100).toFixed(1)}%`
+
+const sleeves = [
+  { key: 'equity' as const, label: 'EQ', tone: 'eq' },
+  { key: 'fixedIncome' as const, label: 'FI', tone: 'fi' },
+  { key: 'cash' as const, label: 'Cash', tone: 'cash' },
+]
 
 export const AllocationBars = ({ target, current }: { target: SleeveWeights; current: SleeveWeights }) => (
-  <div className="alloc-pair">
-    <SleeveBar label="Target" weights={target} />
-    <SleeveBar label="Current" weights={current} />
+  <div className="alloc-ledger">
+    <div className="alloc-ledger__card alloc-ledger__card--target">
+      <span>Target</span>
+      <SleeveValues weights={target} />
+    </div>
+    <div className="alloc-ledger__card">
+      <span>Current</span>
+      <SleeveValues weights={current} />
+    </div>
   </div>
 )
 
-const SleeveBar = ({ label, weights }: { label: string; weights: SleeveWeights }) => (
-  <div className="alloc-bar">
-    <span>{label}</span>
-    <div className="alloc-bar__track" aria-hidden="true">
-      <i className="alloc-bar__eq" style={{ width: pct(weights.equity) }} />
-      <i className="alloc-bar__fi" style={{ width: pct(weights.fixedIncome) }} />
-      <i className="alloc-bar__cash" style={{ width: pct(weights.cash) }} />
-    </div>
-    <small>EQ {pct(weights.equity)} · FI {pct(weights.fixedIncome)} · CASH {pct(weights.cash)}</small>
+const SleeveValues = ({ weights }: { weights: SleeveWeights }) => (
+  <div className="alloc-ledger__values">
+    {sleeves.map((sleeve) => (
+      <div key={sleeve.key} className={`alloc-ledger__sleeve alloc-ledger__sleeve--${sleeve.tone}`}>
+        <b>{sleeve.label}</b>
+        <i>{pct(weights[sleeve.key])}</i>
+      </div>
+    ))}
   </div>
 )

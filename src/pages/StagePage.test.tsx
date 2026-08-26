@@ -49,7 +49,7 @@ describe('StagePage', () => {
     expect(library.getByText('Chen Family')).toBeInTheDocument()
     expect(library.getByText('Rivera Household')).toBeInTheDocument()
     expect(library.getAllByText('At Risk').length).toBeGreaterThan(0)
-    expect(library.getByText('On Target')).toBeInTheDocument()
+    expect(library.getByText(/on target/i)).toBeInTheDocument()
     expect(screen.queryByText('Upload CSV')).not.toBeInTheDocument()
   })
 

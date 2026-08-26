@@ -4,9 +4,12 @@ export type SleeveWeights = { equity: number; fixedIncome: number; cash: number 
 
 export type HouseholdRow = {
   name: string
+  code: string
   accounts: number
   aum: number
   drift: number
+  equityDrift: number
+  fixedIncomeDrift: number
   status: 'At Risk'
   equityModel: string
   fixedIncomeModel: string
@@ -43,9 +46,12 @@ const fiModel = 'Nice-Fixed-Income-Model'
 
 const chen: HouseholdRow = {
   name: 'Chen Family',
+  code: 'CH-2041',
   accounts: 5,
   aum: 3_340_000,
   drift: 0.494,
+  equityDrift: 0.494,
+  fixedIncomeDrift: 0.414,
   status: 'At Risk',
   equityModel: eqLm,
   fixedIncomeModel: fiModel,
@@ -59,9 +65,12 @@ export const stageBook = {
     chen,
     {
       name: 'Rivera Household',
+      code: 'RV-1184',
       accounts: 4,
       aum: 1_500_000,
       drift: 0.274,
+      equityDrift: 0.274,
+      fixedIncomeDrift: 0.071,
       status: 'At Risk' as const,
       equityModel: eqLm,
       fixedIncomeModel: fiModel,
@@ -70,9 +79,12 @@ export const stageBook = {
     },
     {
       name: 'Patel Family',
+      code: 'PT-3308',
       accounts: 5,
       aum: 2_000_000,
       drift: 0.228,
+      equityDrift: 0.228,
+      fixedIncomeDrift: 0.213,
       status: 'At Risk' as const,
       equityModel: 'equity-model-0-500k',
       fixedIncomeModel: fiModel,
@@ -81,9 +93,12 @@ export const stageBook = {
     },
     {
       name: 'Okoye Trust',
+      code: 'OK-0912',
       accounts: 3,
       aum: 1_060_000,
       drift: 0.322,
+      equityDrift: 0.312,
+      fixedIncomeDrift: 0.322,
       status: 'At Risk' as const,
       equityModel: eqLm,
       fixedIncomeModel: fiModel,
@@ -92,9 +107,12 @@ export const stageBook = {
     },
     {
       name: 'Berg Holdings',
+      code: 'BG-5520',
       accounts: 4,
       aum: 490_000,
       drift: 0.20,
+      equityDrift: 0.20,
+      fixedIncomeDrift: 0.19,
       status: 'At Risk' as const,
       equityModel: 'equity-model-0-500k',
       fixedIncomeModel: fiModel,

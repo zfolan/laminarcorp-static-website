@@ -1,3 +1,4 @@
+import { ArrowLeftRight, LayoutDashboard, NotebookPen } from 'lucide-react'
 import { stageBook } from '../../../data/stageBook'
 import { AllocationBars } from './AllocationBars'
 
@@ -80,10 +81,19 @@ export const HouseholdsFrame = () => (
               <small>{row.code} · Open rebalance workspace</small>
             </div>
             <div className="library__actions">
-              <span className="library__action library__action--primary">Rebalance</span>
-              <span className="library__action">Overview</span>
+              <span className="library__action library__action--primary">
+                <ArrowLeftRight size={11} aria-hidden="true" />
+                Rebalance
+              </span>
+              <span className="library__action">
+                <LayoutDashboard size={11} aria-hidden="true" />
+                Overview
+              </span>
               <span className="library__action">Holdings</span>
-              <span className="library__action library__action--quiet">Note</span>
+              <span className="library__action library__action--quiet">
+                <NotebookPen size={11} aria-hidden="true" />
+                Note
+              </span>
             </div>
             <div className="library__models">
               <span><b>EQ</b> {row.equityModel}</span>

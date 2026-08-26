@@ -47,4 +47,15 @@ describe('StagePage first load', () => {
     await user.click(screen.getByRole('button', { name: 'Close Analytics preview' }))
     expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
   })
+
+  it('renders the reduced household library', async () => {
+    const user = userEvent.setup()
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Households' }))
+    expect(screen.getAllByText('At Risk').length).toBeGreaterThan(0)
+    expect(screen.getByText('Chen Family')).toBeInTheDocument()
+    expect(screen.getByText('Rivera Household')).toBeInTheDocument()
+    expect(screen.queryByText('Upload CSV')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /rebalance households/i })).not.toBeInTheDocument()
+  })
 })

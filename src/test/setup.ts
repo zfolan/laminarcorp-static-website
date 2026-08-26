@@ -33,3 +33,27 @@ class ResizeObserverMock {
 }
 
 Object.defineProperty(window, 'ResizeObserver', { writable: true, value: ResizeObserverMock })
+
+class IntersectionObserverMock {
+  readonly root = null
+  readonly rootMargin = ''
+  readonly thresholds = []
+  private readonly callback: IntersectionObserverCallback
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback
+  }
+
+  observe = (element: Element) => {
+    this.callback(
+      [{ isIntersecting: true, intersectionRatio: 1, target: element } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    )
+  }
+
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+  takeRecords = () => []
+}
+
+Object.defineProperty(window, 'IntersectionObserver', { writable: true, value: IntersectionObserverMock })

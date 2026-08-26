@@ -48,13 +48,13 @@ export const StagePage = () => {
         <section className="stage-hero" aria-label="Laminar Apex">
           <StageNodes onSelect={scrollToScene} />
         </section>
-        <StageSection scene="households">
+        <StageSection scene="households" reducedMotion={reducedMotion}>
           <HouseholdsFrame />
         </StageSection>
-        <StageSection scene="rebalance">
+        <StageSection scene="rebalance" reducedMotion={reducedMotion}>
           <RebalanceFrame />
         </StageSection>
-        <StageSection scene="analytics">
+        <StageSection scene="analytics" reducedMotion={reducedMotion}>
           <AnalyticsFrame />
         </StageSection>
         {state.access !== 'closed' ? (

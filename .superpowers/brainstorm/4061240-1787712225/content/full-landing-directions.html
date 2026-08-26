@@ -1,0 +1,125 @@
+<style>
+  .intro { max-width: 920px; margin-bottom: 26px; }
+  .intro h2 { margin-bottom: 8px; }
+  .directions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  .direction { overflow: hidden; border: 1px solid #26313d; border-radius: 10px; background: #080b10; cursor: pointer; transition: border-color .2s, translate .2s; }
+  .direction:hover, .direction.selected { border-color: #83a9cc; translate: 0 -2px; }
+  .mini-page { min-height: 820px; overflow: hidden; color: #e8edf2; background: #07090d; font-family: Inter, system-ui, sans-serif; }
+  .mini-page * { box-sizing: border-box; }
+  .mini-nav { height: 34px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #18202b; color: #6e7a87; font-size: 6px; }
+  .mini-brand { display: flex; align-items: center; gap: 6px; color: #e8edf2; font-weight: 700; letter-spacing: .14em; }
+  .mini-mark { width: 15px; height: 15px; display: grid; place-items: center; border: 1px solid #5b8def; color: #83a9cc; font-size: 6px; }
+  .mini-cta { padding: 5px 7px; border-radius: 3px; color: #07101a; background: #83a9cc; font-weight: 700; }
+  .kicker { color: #83a9cc; font: 600 5px/1 ui-monospace, monospace; letter-spacing: .13em; text-transform: uppercase; }
+  .direction-body { padding: 15px; border-top: 1px solid #26313d; background: #0c1118; }
+  .direction-body h3 { margin: 0 0 7px; color: #e8edf2; }
+  .direction-body p { margin: 0; color: #98a3af; font-size: 12px; line-height: 1.5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .tags span { padding: 4px 6px; border: 1px solid #26313d; border-radius: 99px; color: #83a9cc; font: 600 8px/1 ui-monospace, monospace; }
+  .network-svg line, .network-svg path { fill: none; stroke: #4a6682; stroke-width: .75; opacity: .66; }
+  .network-svg .active { stroke: #83a9cc; stroke-width: 1.2; }
+  .network-svg circle { fill: #83a9cc; }
+
+  /* A: Engine Graph */
+  .graph-hero { position: relative; height: 280px; padding: 42px 18px 0; overflow: hidden; border-bottom: 1px solid #18202b; }
+  .graph-copy { position: relative; z-index: 3; width: 48%; }
+  .graph-copy h4 { margin: 9px 0 9px; font-size: 25px; font-weight: 500; line-height: .95; letter-spacing: -.05em; }
+  .graph-copy p { margin: 0; color: #98a3af; font-size: 7px; line-height: 1.45; }
+  .graph-copy b { display: inline-block; margin-top: 12px; padding: 7px 9px; border-radius: 3px; color: #07101a; background: #83a9cc; font-size: 6px; }
+  .graph-map { position: absolute; top: 45px; right: 0; width: 58%; height: 210px; }
+  .graph-node { position: absolute; z-index: 2; min-width: 73px; padding: 7px; border: 1px solid #2d4358; border-radius: 3px; background: rgba(12,18,26,.94); color: #8f9aa6; font: 600 5px/1.35 ui-monospace, monospace; }
+  .graph-node strong { display: block; margin-top: 4px; color: #e8edf2; font: 600 7px/1.2 Inter, sans-serif; }
+  .gn1 { top: 58px; right: 88px; } .gn2 { top: 126px; right: 22px; border-color: #5b8def; } .gn3 { top: 170px; right: 116px; } .gn4 { top: 220px; right: 34px; }
+  .graph-system { padding: 26px 16px 20px; }
+  .graph-system__head { display: grid; grid-template-columns: 1fr .75fr; gap: 18px; align-items: end; }
+  .graph-system h5 { margin: 7px 0 0; font-size: 17px; font-weight: 500; line-height: 1; }
+  .graph-system__head p { margin: 0; color: #7e8995; font-size: 6px; line-height: 1.5; }
+  .graph-flow { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid #26313d; }
+  .graph-flow > div { min-height: 74px; padding: 10px 7px; border-right: 1px solid #18202b; }
+  .graph-flow > div:last-child { border-right: 0; }
+  .graph-flow span { color: #83a9cc; font: 600 5px/1 ui-monospace, monospace; }
+  .graph-flow b { display: block; margin-top: 9px; font-size: 8px; }
+  .graph-proof { margin-top: 22px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 9px; }
+  .engine-panel { min-height: 140px; padding: 12px; border: 1px solid #26313d; background: #0c121a; }
+  .engine-panel h6 { margin: 7px 0 11px; font-size: 12px; }
+  .engine-row { margin-top: 5px; padding: 7px; display: flex; justify-content: space-between; border: 1px solid #18202b; color: #77828e; font-size: 6px; }
+  .engine-row.is-hot { border-left: 2px solid #5b8def; color: #e8edf2; background: #111c29; }
+  .graph-trust { margin-top: 24px; padding: 18px 0 4px; border-top: 1px solid #18202b; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .graph-trust div { color: #7d8994; font-size: 6px; line-height: 1.5; }
+  .graph-trust b { display: block; margin-bottom: 4px; color: #e8edf2; font-size: 8px; }
+
+  /* B: Control Room */
+  .control-shell { display: grid; grid-template-columns: 52px 1fr; min-height: 786px; }
+  .control-rail { padding: 13px 7px; border-right: 1px solid #18202b; background: #090d13; }
+  .rail-dot { width: 28px; height: 28px; margin: 0 auto 7px; display: grid; place-items: center; border: 1px solid transparent; color: #53606d; font-size: 8px; }
+  .rail-dot.active { border-color: #33404d; color: #83a9cc; background: #111923; }
+  .control-main { padding: 18px 14px; }
+  .control-heading { display: flex; justify-content: space-between; gap: 10px; }
+  .control-heading h4 { margin: 7px 0 0; font-size: 22px; font-weight: 500; letter-spacing: -.04em; }
+  .book-state { padding: 7px; border: 1px solid #26313d; color: #83a9cc; font: 600 5px/1 ui-monospace, monospace; }
+  .metric-strip { margin-top: 14px; display: grid; grid-template-columns: repeat(4,1fr); border: 1px solid #26313d; }
+  .metric-strip div { padding: 9px; border-right: 1px solid #18202b; }
+  .metric-strip div:last-child { border-right: 0; }
+  .metric-strip span { display: block; color: #63707d; font: 600 5px/1 ui-monospace, monospace; }
+  .metric-strip b { display: block; margin-top: 6px; font-size: 10px; }
+  .control-grid { margin-top: 11px; display: grid; grid-template-columns: .78fr 1.22fr; gap: 10px; }
+  .queue-pane, .review-pane { min-height: 250px; padding: 10px; border: 1px solid #26313d; background: #0c1118; }
+  .queue-card { margin-top: 6px; padding: 8px; border: 1px solid #18202b; color: #778390; font-size: 6px; }
+  .queue-card.active { border-color: #5b8def; color: #e8edf2; background: #111c29; }
+  .review-pane h5 { margin: 8px 0; font-size: 13px; }
+  .allocation { height: 7px; margin-top: 8px; background: #18202b; }
+  .allocation i { display: block; width: 68%; height: 100%; background: #5b8def; }
+  .control-flow { margin-top: 12px; display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .control-flow div { padding: 9px 7px; border: 1px solid #26313d; color: #687480; font-size: 6px; }
+  .control-flow div.active { color: #e8edf2; border-color: #5b8def; }
+  .control-story { margin-top: 24px; padding-top: 18px; border-top: 1px solid #26313d; }
+  .control-story h5 { margin: 7px 0 10px; font-size: 16px; font-weight: 500; }
+  .story-row { padding: 10px 0; display: grid; grid-template-columns: 70px 1fr; border-top: 1px solid #18202b; color: #7c8792; font-size: 6px; }
+  .story-row b { color: #e8edf2; }
+
+  /* C: Signal Cascade */
+  .cascade-hero { position: relative; height: 250px; padding: 42px 18px 0; text-align: center; overflow: hidden; }
+  .cascade-hero h4 { position: relative; z-index: 3; max-width: 290px; margin: 10px auto; font-size: 26px; font-weight: 500; line-height: .94; letter-spacing: -.05em; }
+  .cascade-hero p { position: relative; z-index: 3; max-width: 260px; margin: 0 auto; color: #8b96a1; font-size: 7px; line-height: 1.45; }
+  .cascade-field { position: absolute; inset: 70px 0 0; width: 100%; height: 180px; opacity: .46; }
+  .cascade-section { position: relative; min-height: 138px; padding: 22px 16px 18px 58px; border-top: 1px solid #18202b; }
+  .cascade-spine { position: absolute; top: 0; bottom: 0; left: 28px; width: 1px; background: #26313d; }
+  .cascade-spine::before { position: absolute; top: 28px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: #83a9cc; box-shadow: 0 0 0 5px rgba(131,169,204,.08); content: ''; }
+  .cascade-section header { display: grid; grid-template-columns: .8fr 1.2fr; gap: 12px; align-items: start; }
+  .cascade-section h5 { margin: 7px 0 0; font-size: 16px; font-weight: 500; line-height: 1; }
+  .cascade-section header p { margin: 0; color: #7f8a96; font-size: 6px; line-height: 1.55; }
+  .cascade-visual { height: 62px; margin-top: 14px; display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .cascade-visual div { padding: 8px; border: 1px solid #26313d; color: #71808d; font: 600 5px/1.4 ui-monospace, monospace; }
+  .cascade-visual div.active { color: #e8edf2; border-color: #5b8def; background: #111c29; }
+  .cascade-end { padding: 28px 18px; text-align: center; border-top: 1px solid #26313d; }
+  .cascade-end h5 { margin: 8px auto 12px; max-width: 300px; font-size: 19px; font-weight: 500; }
+  .cascade-end b { display: inline-block; padding: 7px 10px; color: #07101a; background: #83a9cc; font-size: 6px; }
+
+  @media (max-width: 980px) { .directions { grid-template-columns: 1fr; } .mini-page { min-height: 700px; } }
+</style>
+
+<div class="intro">
+  <h2>Three complete landing-page structures</h2>
+  <p class="subtitle">These are structural directions, not polish variants. All use the real advisor workflow and technical-intelligence identity. None retain the current centered hero, empty cinematic gap, or disconnected section islands.</p>
+</div>
+
+<div class="directions cards">
+  <div class="direction card" data-choice="engine-graph" onclick="toggleSelect(this)">
+    <div class="mini-page">
+      <div class="mini-nav"><div class="mini-brand"><span class="mini-mark">Λ</span>LAMINAR / APEX</div><span>PLATFORM · SECURITY · COMPANY</span><b class="mini-cta">REQUEST ACCESS</b></div>
+      <section class="graph-hero"><div class="graph-copy"><span class="kicker">ADVISOR INTELLIGENCE ENGINE</span><h4>Know what needs you next.</h4><p>Holdings become priorities, reviewed decisions, and client-ready action.</p><b>EXPLORE THE ENGINE →</b></div><svg class="graph-map network-svg" viewBox="0 0 240 210"><path class="active" d="M15 35 C85 45 75 105 125 115 C173 125 164 175 225 188"/><line x1="15" y1="35" x2="92" y2="74"/><line x1="92" y1="74" x2="125" y2="115"/><line x1="125" y1="115" x2="182" y2="154"/><line x1="182" y1="154" x2="225" y2="188"/><circle cx="15" cy="35" r="2"/><circle cx="92" cy="74" r="2"/><circle cx="125" cy="115" r="3"/><circle cx="182" cy="154" r="2"/><circle cx="225" cy="188" r="2"/></svg><div class="graph-node gn1">01 / INPUT<strong>Book coverage</strong></div><div class="graph-node gn2">02 / PRIORITY<strong>Household queue</strong></div><div class="graph-node gn3">03 / REVIEW<strong>Decision context</strong></div><div class="graph-node gn4">04 / OUTPUT<strong>Client action</strong></div></section>
+      <section class="graph-system"><div class="graph-system__head"><div><span class="kicker">ONE CONNECTED SYSTEM</span><h5>From client-book data to reviewed action.</h5></div><p>Every step keeps the active book, household, model, policy, and review state attached.</p></div><div class="graph-flow"><div><span>01 / COVER</span><b>Confirm data</b></div><div><span>02 / PRIORITIZE</span><b>Rank households</b></div><div><span>03 / DECIDE</span><b>Review trades</b></div><div><span>04 / ACT</span><b>Proposal or export</b></div></div><div class="graph-proof"><div class="engine-panel"><span class="kicker">DECISION ENGINE / LIVE CONTEXT</span><h6>Northbridge Household</h6><div class="engine-row is-hot"><span>Cash drift</span><b>$248K</b></div><div class="engine-row"><span>Model fit</span><b>REVIEW</b></div><div class="engine-row"><span>Policy checks</span><b>23 / 23</b></div></div><div class="engine-panel"><span class="kicker">CARRY FORWARD</span><h6>One reviewed output</h6><div class="engine-row"><span>Client proposal</span><b>READY</b></div><div class="engine-row"><span>Order export</span><b>VALIDATED</b></div></div></div><div class="graph-trust"><div><b>Professional control</b>Review and rationale remain explicit.</div><div><b>Traceable context</b>Data versions follow the decision.</div><div><b>Flexible output</b>Proposal, export, or staged deployment.</div></div></section>
+    </div>
+    <div class="direction-body"><h3>A — Engine Graph <span style="color:#83a9cc;font-size:11px">Recommended</span></h3><p>A spatial product map owns the identity. Dense enough to feel real, but every section has one job and the page stays compact.</p><div class="tags"><span>Network-led</span><span>Product proof</span><span>Balanced density</span></div></div>
+  </div>
+
+  <div class="direction card" data-choice="control-room" onclick="toggleSelect(this)">
+    <div class="mini-page"><div class="mini-nav"><div class="mini-brand"><span class="mini-mark">Λ</span>LAMINAR / APEX</div><span>PRODUCT WORKSPACE PREVIEW</span><b class="mini-cta">REQUEST ACCESS</b></div><div class="control-shell"><aside class="control-rail"><div class="rail-dot active">◈</div><div class="rail-dot">⌁</div><div class="rail-dot">◎</div><div class="rail-dot">⇄</div><div class="rail-dot">▧</div></aside><div class="control-main"><div class="control-heading"><div><span class="kicker">YOUR BOOK / TODAY</span><h4>Know what needs you next.</h4></div><span class="book-state">BOOK ACTIVE · V17</span></div><div class="metric-strip"><div><span>AUM</span><b>$1.8B</b></div><div><span>HOUSEHOLDS</span><b>148</b></div><div><span>NEED REVIEW</span><b>12</b></div><div><span>SOURCES</span><b>3</b></div></div><div class="control-grid"><section class="queue-pane"><span class="kicker">PRIORITY QUEUE</span><div class="queue-card active">Northbridge Household · Cash drift</div><div class="queue-card">Arbor Ridge · Concentration</div><div class="queue-card">Westlake · Tax-loss</div></section><section class="review-pane"><span class="kicker">DECISION REVIEW</span><h5>Northbridge Household</h5><div class="engine-row is-hot"><span>Current cash</span><b>12.8%</b></div><div class="engine-row"><span>Target cash</span><b>8.0%</b></div><div class="allocation"><i></i></div><div class="engine-row"><span>Policy checks</span><b>PASS</b></div></section></div><div class="control-flow"><div>01 / COVERAGE</div><div class="active">02 / PRIORITY</div><div>03 / REVIEW</div><div>04 / ACTION</div></div><section class="control-story"><span class="kicker">THE OPERATING SYSTEM</span><h5>One workspace from holdings to implementation.</h5><div class="story-row"><b>Models + analytics</b><span>Understand target fit, exposures, cash, currency, and placement.</span></div><div class="story-row"><b>Rebalance review</b><span>Refine trades, resolve diagnostics, approve and validate.</span></div><div class="story-row"><b>Client outputs</b><span>Proposal, order export, or staged deployment.</span></div></section></div></div></div>
+    <div class="direction-body"><h3>B — Control Room</h3><p>The landing page behaves like a simplified product workspace. Strongest proof and highest density, with less room for cinematic brand expression.</p><div class="tags"><span>App-first</span><span>High credibility</span><span>Dense</span></div></div>
+  </div>
+
+  <div class="direction card" data-choice="signal-cascade" onclick="toggleSelect(this)">
+    <div class="mini-page"><div class="mini-nav"><div class="mini-brand"><span class="mini-mark">Λ</span>LAMINAR / APEX</div><span>PLATFORM · SECURITY · COMPANY</span><b class="mini-cta">REQUEST ACCESS</b></div><section class="cascade-hero"><span class="kicker">CONNECTED PORTFOLIO INTELLIGENCE</span><h4>Decisions move forward when context stays connected.</h4><p>A guided path from book coverage to client-ready action.</p><svg class="cascade-field network-svg" viewBox="0 0 400 180"><path class="active" d="M0 130 C95 60 140 150 205 86 C270 22 310 110 400 42"/><path d="M0 165 C90 120 145 175 225 130 C305 84 340 140 400 104"/><circle cx="76" cy="93" r="2"/><circle cx="205" cy="86" r="3"/><circle cx="325" cy="79" r="2"/></svg></section><section class="cascade-section"><i class="cascade-spine"></i><header><div><span class="kicker">01 / BOOK COVERAGE</span><h5>Start with a trusted book.</h5></div><p>Confirm sources, holdings versions, accounts, and model coverage before asking the system for a decision.</p></header><div class="cascade-visual"><div>HOLDINGS / V17</div><div class="active">148 HOUSEHOLDS</div><div>3 SOURCES</div></div></section><section class="cascade-section"><i class="cascade-spine"></i><header><div><span class="kicker">02 / PRIORITY</span><h5>See who needs attention.</h5></div><p>Rank the household queue by drift, status, material impact, and model alignment.</p></header><div class="cascade-visual"><div class="active">CASH DRIFT</div><div>CONCENTRATION</div><div>TAX-LOSS</div></div></section><section class="cascade-section"><i class="cascade-spine"></i><header><div><span class="kicker">03 / REVIEW</span><h5>Keep judgment in control.</h5></div><p>Compare allocation, models, cash, tax impact, proposed trades, and diagnostics.</p></header><div class="cascade-visual"><div>CURRENT → TARGET</div><div class="active">REVIEW TRADES</div><div>23 CHECKS</div></div></section><section class="cascade-section"><i class="cascade-spine"></i><header><div><span class="kicker">04 / CLIENT ACTION</span><h5>Carry the decision forward.</h5></div><p>Create the client narrative, custodian-ready orders, or a staged deployment plan.</p></header><div class="cascade-visual"><div>PROPOSAL</div><div>ORDER EXPORT</div><div class="active">DEPLOYMENT</div></div></section><div class="cascade-end"><span class="kicker">PROFESSIONAL JUDGMENT / PRESERVED</span><h5>A technical engine built around the advisor’s decision.</h5><b>REQUEST ACCESS →</b></div></div>
+    <div class="direction-body"><h3>C — Signal Cascade</h3><p>A clear vertical story with one continuous signal spine. Most legible and cinematic, but less immediately product-like than the other directions.</p><div class="tags"><span>Story-led</span><span>Strong pacing</span><span>Lower density</span></div></div>
+  </div>
+</div>

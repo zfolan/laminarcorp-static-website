@@ -56,8 +56,6 @@ export const HouseholdsFrame = () => (
         <div className="library__filters" aria-hidden="true">
           <span className="library__search">Search households</span>
           <span className="library__control">Highest drift</span>
-          <span className="library__control"><b>DRIFT BANDS</b> 0.5% / 1%</span>
-          <span className="library__control">All IAs (1)</span>
           <span className="library__rebalance">Rebalance households in view</span>
         </div>
       </div>

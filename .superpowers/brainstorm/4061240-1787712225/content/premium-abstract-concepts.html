@@ -1,0 +1,148 @@
+<style>
+  .concept-intro { max-width: 980px; margin-bottom: 28px; }
+  .concept-intro h2 { margin-bottom: 8px; }
+  .concept-intro code { color: #83a9cc; }
+  .concept-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  .concept-card { overflow: hidden; border: 1px solid #26313d; border-radius: 10px; background: #090d13; cursor: pointer; transition: border-color .2s ease, transform .2s ease; }
+  .concept-card:hover, .concept-card.selected { border-color: #83a9cc; transform: translateY(-2px); }
+  .concept-meta { padding: 17px 18px 19px; border-top: 1px solid #26313d; background: #0c1118; }
+  .concept-meta h3 { margin: 0 0 7px; color: #e8edf2; }
+  .concept-meta p { margin: 0; color: #98a3af; font-size: 12px; line-height: 1.5; }
+  .source { margin-top: 11px; padding-top: 10px; border-top: 1px solid #202a35; color: #83a9cc; font: 600 8px/1.45 ui-monospace, monospace; }
+  .traits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .traits span { padding: 4px 7px; border: 1px solid #26313d; border-radius: 99px; color: #98a3af; font: 600 8px/1 ui-monospace, monospace; }
+  .site { min-height: 900px; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+  .site * { box-sizing: border-box; }
+  .nav { height: 35px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 6px; }
+  .logo { display: flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: .14em; }
+  .logo-mark { width: 15px; height: 15px; display: grid; place-items: center; font-size: 6px; }
+  .nav-action { padding: 5px 7px; border-radius: 99px; font-weight: 700; }
+  .mono { font-family: ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+
+  /* Concept 1 — Obsidian Mesh */
+  .obsidian { color: #f4f2ff; background: #060509; }
+  .obsidian .nav { position: relative; z-index: 5; color: rgba(244,242,255,.62); border-bottom: 1px solid rgba(255,255,255,.08); }
+  .obsidian .logo-mark { border: 1px solid #a98cff; color: #c4b3ff; }
+  .obsidian .nav-action { color: #111; background: #f4f2ff; }
+  .mesh-hero { position: relative; height: 330px; overflow: hidden; }
+  .mesh-bg { position: absolute; inset: 0; background: radial-gradient(circle at 20% 35%, #7246ff 0, transparent 29%), radial-gradient(circle at 72% 22%, #2234a8 0, transparent 29%), radial-gradient(circle at 64% 78%, #a42d76 0, transparent 34%), linear-gradient(145deg, #161020, #020204 72%); filter: saturate(.8); }
+  .mesh-bg::after { position: absolute; inset: 0; background: repeating-linear-gradient(112deg, transparent 0 22px, rgba(255,255,255,.025) 23px, transparent 24px 42px); mix-blend-mode: overlay; content: ''; }
+  .mesh-copy { position: absolute; z-index: 2; right: 18px; bottom: 25px; left: 18px; }
+  .mesh-copy span { color: #c4b3ff; font: 600 5px/1 ui-monospace, monospace; letter-spacing: .14em; }
+  .mesh-copy h4 { max-width: 320px; margin: 9px 0 8px; font-size: 29px; font-weight: 500; line-height: .91; letter-spacing: -.055em; }
+  .mesh-copy p { max-width: 265px; margin: 0; color: rgba(244,242,255,.7); font-size: 7px; line-height: 1.5; }
+  .mesh-index { padding: 26px 15px 17px; background: #08070c; }
+  .mesh-index h5 { max-width: 280px; margin: 8px 0 18px; font-size: 18px; font-weight: 500; line-height: .98; letter-spacing: -.03em; }
+  .mesh-stage { min-height: 64px; padding: 12px 0; display: grid; grid-template-columns: 42px 1fr 90px; align-items: center; border-top: 1px solid rgba(255,255,255,.12); }
+  .mesh-stage > span { color: #9c85e8; font: 600 5px/1 ui-monospace, monospace; }
+  .mesh-stage b { font-size: 10px; font-weight: 500; }
+  .mesh-stage small { color: rgba(244,242,255,.48); font-size: 6px; line-height: 1.4; }
+  .mesh-stage.active { margin-inline: -15px; padding-inline: 15px; background: linear-gradient(90deg, rgba(114,70,255,.22), transparent); }
+  .mesh-proof { position: relative; height: 180px; padding: 25px 16px; overflow: hidden; border-top: 1px solid rgba(255,255,255,.1); background: #050407; }
+  .mesh-proof h5 { position: relative; z-index: 2; max-width: 210px; margin: 7px 0; font-size: 17px; font-weight: 500; }
+  .mesh-proof p { position: relative; z-index: 2; max-width: 190px; color: rgba(244,242,255,.55); font-size: 6px; line-height: 1.5; }
+  .mesh-orbit { position: absolute; right: -25px; bottom: -65px; width: 210px; height: 210px; border: 1px solid rgba(196,179,255,.35); border-radius: 50%; box-shadow: inset 0 0 50px rgba(114,70,255,.18), 0 0 50px rgba(114,70,255,.1); }
+  .mesh-orbit::before, .mesh-orbit::after { position: absolute; border: 1px solid rgba(196,179,255,.22); border-radius: 50%; content: ''; }
+  .mesh-orbit::before { inset: 24px; } .mesh-orbit::after { inset: 54px; background: radial-gradient(circle, rgba(196,179,255,.22), transparent 68%); }
+  .mesh-end { padding: 28px 16px; text-align: center; background: linear-gradient(180deg, #0d0a14, #050407); }
+  .mesh-end h5 { margin: 8px auto 13px; max-width: 280px; font-size: 18px; font-weight: 500; }
+  .mesh-end b { display: inline-block; padding: 7px 11px; border-radius: 99px; color: #111; background: #f4f2ff; font-size: 6px; }
+
+  /* Concept 2 — Editorial Intelligence */
+  .editorial { color: #171717; background: #f1efe9; font-family: Arial, sans-serif; }
+  .editorial .nav { color: #525252; border-bottom: 1px solid #bfbcb4; }
+  .editorial .logo-mark { border: 1px solid #171717; }
+  .editorial .nav-action { color: #f8f7f2; background: #171717; }
+  .editorial-hero { padding: 56px 15px 0; }
+  .editorial-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 18px; align-items: end; }
+  .editorial-tag { color: #575757; font-size: 7px; line-height: 1.5; }
+  .editorial-copy h4 { margin: 0; font-family: Georgia, serif; font-size: 27px; font-weight: 400; line-height: .98; letter-spacing: -.03em; }
+  .editorial-copy p { margin: 14px 0 0; color: #666; font-size: 7px; line-height: 1.5; }
+  .editorial-art { position: relative; height: 190px; margin-top: 38px; overflow: hidden; background: #111827; }
+  .editorial-art::before { position: absolute; inset: 0; background: radial-gradient(circle at 28% 72%, #4f7cff, transparent 32%), radial-gradient(circle at 74% 36%, #9fc5ff, transparent 28%), linear-gradient(125deg, #070b12, #1e2e50); content: ''; }
+  .editorial-art::after { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 49px, rgba(255,255,255,.08) 50px), repeating-linear-gradient(0deg, transparent 0 39px, rgba(255,255,255,.06) 40px); content: ''; }
+  .art-label { position: absolute; z-index: 2; right: 12px; bottom: 10px; color: rgba(255,255,255,.8); font: 600 5px/1 ui-monospace, monospace; }
+  .editorial-flow { padding: 30px 15px 18px; }
+  .editorial-flow__head { display: grid; grid-template-columns: .55fr 1.45fr; gap: 18px; }
+  .editorial-flow h5 { margin: 0; font-family: Georgia, serif; font-size: 19px; font-weight: 400; line-height: 1.05; }
+  .editorial-flow__head p { margin: 0; color: #5f5f5f; font-size: 7px; line-height: 1.55; }
+  .editorial-row { min-height: 72px; display: grid; grid-template-columns: 45px 1fr 105px; align-items: center; border-top: 1px solid #bbb8b0; }
+  .editorial-row span { color: #275cca; font: 600 5px/1 ui-monospace, monospace; }
+  .editorial-row b { font-family: Georgia, serif; font-size: 12px; font-weight: 400; }
+  .editorial-row small { color: #6c6c6c; font-size: 6px; line-height: 1.45; }
+  .editorial-row.active { margin-inline: -15px; padding-inline: 15px; color: white; background: #171717; }
+  .editorial-row.active small { color: #b5b5b5; }
+  .editorial-quote { padding: 36px 16px; border-top: 1px solid #bbb8b0; text-align: center; }
+  .editorial-quote p { max-width: 320px; margin: 0 auto; font-family: Georgia, serif; font-size: 20px; line-height: 1.05; }
+  .editorial-quote span { display: block; margin-top: 13px; color: #275cca; font: 600 5px/1 ui-monospace, monospace; }
+  .editorial-footer { padding: 22px 15px; display: flex; justify-content: space-between; border-top: 1px solid #bbb8b0; font-size: 6px; }
+
+  /* Concept 3 — Woven Intelligence */
+  .woven { color: #f3f3ee; background: #030404; }
+  .woven .nav { position: relative; z-index: 5; color: #9ba2a7; }
+  .woven .logo-mark { border: 1px solid #dae9e8; color: #dae9e8; }
+  .woven .nav-action { color: #050707; background: #e8f2ef; }
+  .woven-hero { position: relative; height: 350px; overflow: hidden; text-align: center; }
+  .woven-object { position: absolute; top: 34px; left: 50%; width: 270px; height: 270px; border-radius: 46% 54% 38% 62% / 55% 35% 65% 45%; background: radial-gradient(circle at 30% 30%, rgba(161,255,227,.86) 0 1px, transparent 1.5px) 0 0/10px 10px, radial-gradient(circle at 65% 65%, rgba(116,160,255,.7) 0 1px, transparent 1.5px) 0 0/13px 13px; filter: drop-shadow(0 0 30px rgba(120,220,209,.22)); transform: translateX(-50%) rotate(-14deg); }
+  .woven-object::after { position: absolute; inset: 38px; border: 1px solid rgba(180,255,239,.35); border-radius: 58% 42% 65% 35%; box-shadow: inset 0 0 45px rgba(105,195,213,.18); content: ''; }
+  .woven-copy { position: absolute; z-index: 3; right: 16px; bottom: 24px; left: 16px; }
+  .woven-copy h4 { margin: 8px auto; max-width: 340px; font-family: Georgia, serif; font-size: 29px; font-weight: 400; line-height: .92; letter-spacing: -.03em; }
+  .woven-copy p { max-width: 250px; margin: 0 auto; color: rgba(243,243,238,.7); font-size: 7px; line-height: 1.5; }
+  .woven-copy b { display: inline-block; margin-top: 13px; padding: 7px 11px; border: 1px solid rgba(255,255,255,.4); border-radius: 99px; font-size: 6px; }
+  .woven-thread { position: relative; height: 250px; overflow: hidden; border-top: 1px solid rgba(255,255,255,.1); }
+  .thread-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: linear-gradient(180deg, #b2efe3, #506bff, #d898ca); }
+  .woven-step { position: absolute; width: 42%; padding: 12px; border: 1px solid rgba(255,255,255,.14); background: rgba(10,13,14,.78); backdrop-filter: blur(8px); }
+  .woven-step span { color: #a6e3da; font: 600 5px/1 ui-monospace, monospace; }
+  .woven-step b { display: block; margin-top: 6px; font-family: Georgia, serif; font-size: 11px; font-weight: 400; }
+  .ws1 { top: 18px; left: 4%; } .ws2 { top: 76px; right: 4%; } .ws3 { top: 136px; left: 4%; } .ws4 { top: 194px; right: 4%; }
+  .woven-proof { padding: 28px 15px; border-top: 1px solid rgba(255,255,255,.1); background: radial-gradient(circle at 20% 40%, rgba(56,100,126,.18), transparent 38%), #050707; }
+  .woven-proof h5 { max-width: 270px; margin: 8px 0 19px; font-family: Georgia, serif; font-size: 19px; font-weight: 400; line-height: 1.04; }
+  .woven-proof-row { min-height: 62px; padding: 11px 0; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid rgba(255,255,255,.12); }
+  .woven-proof-row b { font-size: 9px; }
+  .woven-proof-row span { color: #919c9f; font-size: 6px; line-height: 1.45; }
+  .woven-end { padding: 34px 16px; text-align: center; background: linear-gradient(150deg, #071111, #07070b); }
+  .woven-end h5 { margin: 8px auto 14px; max-width: 300px; font-family: Georgia, serif; font-size: 20px; font-weight: 400; }
+  .woven-end b { display: inline-block; padding: 7px 11px; border-radius: 99px; color: #050707; background: #d9eeea; font-size: 6px; }
+
+  @media (max-width: 980px) { .concept-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="concept-intro">
+  <h2>Three abstract premium directions pulled from 21st</h2>
+  <p class="subtitle">Each concept starts from a different catalog component and rebuilds the entire Laminar landing language around it. These are styling systems, not the same layout with different backgrounds.</p>
+</div>
+
+<div class="concept-grid cards">
+  <div class="concept-card card" data-choice="obsidian-mesh" onclick="toggleSelect(this)">
+    <div class="site obsidian">
+      <div class="nav"><div class="logo"><span class="logo-mark">Λ</span>LAMINAR</div><span>PLATFORM · METHOD · COMPANY</span><b class="nav-action">REQUEST ACCESS</b></div>
+      <section class="mesh-hero"><div class="mesh-bg"></div><div class="mesh-copy"><span>CONNECTED PORTFOLIO INTELLIGENCE</span><h4>Complex decisions. One living system.</h4><p>Apex connects the advisor’s book, priorities, review context, and client action.</p></div></section>
+      <section class="mesh-index"><span class="mono" style="color:#9c85e8;font-size:5px">THE DECISION INDEX</span><h5>Every stage remains connected to what came before.</h5><div class="mesh-stage"><span>01</span><b>Book coverage</b><small>Holdings · versions · sources · accounts</small></div><div class="mesh-stage active"><span>02</span><b>Priority intelligence</b><small>Drift · status · material impact</small></div><div class="mesh-stage"><span>03</span><b>Decision review</b><small>Models · cash · tax · proposed trades</small></div><div class="mesh-stage"><span>04</span><b>Client action</b><small>Proposal · orders · staged deployment</small></div></section>
+      <section class="mesh-proof"><span class="mono" style="color:#c4b3ff;font-size:5px">A SYSTEM, NOT A DASHBOARD</span><h5>Professional judgment stays visible.</h5><p>Recommendations remain reviewable, adjustable, and traceable before anything moves forward.</p><div class="mesh-orbit"></div></section>
+      <div class="mesh-end"><span class="mono" style="color:#9c85e8;font-size:5px">LAMINAR APEX</span><h5>Know what needs you next—and why.</h5><b>REQUEST ACCESS →</b></div>
+    </div>
+    <div class="concept-meta"><h3>A — Obsidian Mesh</h3><p>Immersive, saturated, and architectural. Abstract shader material becomes the brand surface; typography and four decisive horizontal stages keep it premium rather than “crypto.”</p><div class="source">21ST PULL: Hero Shader · ID 5729<br>@paper-design/shaders-react / MeshGradient</div><div class="traits"><span>Saturated</span><span>Immersive</span><span>Architectural</span></div></div>
+  </div>
+
+  <div class="concept-card card" data-choice="editorial-intelligence" onclick="toggleSelect(this)">
+    <div class="site editorial">
+      <div class="nav"><div class="logo"><span class="logo-mark">Λ</span>LAMINAR APEX</div><span>PLATFORM · PRINCIPLES · COMPANY</span><b class="nav-action">REQUEST ACCESS</b></div>
+      <section class="editorial-hero"><div class="editorial-grid"><div class="editorial-tag">Portfolio intelligence for advisors carrying complex decisions from source data to client action.</div><div class="editorial-copy"><h4>Judgment deserves better infrastructure.</h4><p>Apex brings the advisor’s book, models, analytics, recommendations, and outputs into one coherent operating system.</p></div></div><div class="editorial-art"><span class="art-label">ACTIVE BOOK → PRIORITY → REVIEW → ACTION</span></div></section>
+      <section class="editorial-flow"><div class="editorial-flow__head"><span class="mono" style="color:#275cca;font-size:5px">ONE CONNECTED WORKFLOW</span><div><h5>From holdings to a reviewed decision.</h5><p>Not a feature grid. One sequence that keeps the active book and advisor context intact.</p></div></div><div class="editorial-row"><span>01 / COVER</span><b>Establish the book.</b><small>Coverage, versions, sources, accounts.</small></div><div class="editorial-row active"><span>02 / PRIORITY</span><b>See what needs attention.</b><small>Household drift, status, impact.</small></div><div class="editorial-row"><span>03 / REVIEW</span><b>Apply professional judgment.</b><small>Models, cash, tax, trades, diagnostics.</small></div><div class="editorial-row"><span>04 / ACT</span><b>Carry the decision forward.</b><small>Proposal, export, deployment.</small></div></section>
+      <section class="editorial-quote"><p>“The product is not the recommendation. It is the integrity of the decision around it.”</p><span>BUILT FOR PROFESSIONAL OVERSIGHT</span></section>
+      <footer class="editorial-footer"><b>LAMINAR / APEX</b><span>REQUEST ACCESS →</span></footer>
+    </div>
+    <div class="concept-meta"><h3>B — Editorial Intelligence</h3><p>Warm, restrained, and unmistakably premium. The product is expressed through type, rules, and one abstract systems image rather than a dark dashboard or particle effect.</p><div class="source">21ST PULL: Editorial Hero · ID 19075<br>motion/react + asymmetric editorial composition</div><div class="traits"><span>Editorial</span><span>Institutional</span><span>High contrast</span></div></div>
+  </div>
+
+  <div class="concept-card card" data-choice="woven-intelligence" onclick="toggleSelect(this)">
+    <div class="site woven">
+      <div class="nav"><div class="logo"><span class="logo-mark">Λ</span>LAMINAR</div><span>THE ENGINE · CONTROL · OUTPUT</span><b class="nav-action">REQUEST ACCESS</b></div>
+      <section class="woven-hero"><div class="woven-object"></div><div class="woven-copy"><span class="mono" style="color:#a6e3da;font-size:5px">AN ADVISOR INTELLIGENCE ENGINE</span><h4>Context, woven into every decision.</h4><p>A living portfolio system that moves from data coverage to client-ready action.</p><b>ENTER THE WORKFLOW →</b></div></section>
+      <section class="woven-thread"><div class="thread-line"></div><div class="woven-step ws1"><span>01 / INPUT</span><b>Book coverage</b></div><div class="woven-step ws2"><span>02 / SIGNAL</span><b>Priority queue</b></div><div class="woven-step ws3"><span>03 / JUDGMENT</span><b>Decision review</b></div><div class="woven-step ws4"><span>04 / OUTPUT</span><b>Client action</b></div></section>
+      <section class="woven-proof"><span class="mono" style="color:#a6e3da;font-size:5px">THE SYSTEM REMEMBERS</span><h5>Data versions, models, diagnostics, rationale, and review state travel together.</h5><div class="woven-proof-row"><b>Advisor control</b><span>Refine, approve, decline, and explain recommendations.</span></div><div class="woven-proof-row"><b>Traceable output</b><span>Proposal, order export, or staged implementation.</span></div><div class="woven-proof-row"><b>Contextual intelligence</b><span>Live book, household, and rebalance awareness.</span></div></section>
+      <div class="woven-end"><span class="mono" style="color:#a6e3da;font-size:5px">LAMINAR APEX</span><h5>A technical engine built around professional judgment.</h5><b>REQUEST ACCESS →</b></div>
+    </div>
+    <div class="concept-meta"><h3>C — Woven Intelligence <span style="color:#83a9cc;font-size:11px">Recommended</span></h3><p>Sculptural, black, and cinematic. A single particle form becomes the product metaphor, while the workflow is expressed as a luminous thread rather than interface chrome.</p><div class="source">21ST PULL: Woven Light Hero · ID 5240<br>Three.js particle sculpture + interactive motion</div><div class="traits"><span>Sculptural</span><span>Cinematic</span><span>Distinctive</span></div></div>
+  </div>
+</div>

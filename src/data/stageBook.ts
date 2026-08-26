@@ -22,6 +22,9 @@ export type TradeRow = {
   name: string
   action: 'BUY' | 'SELL'
   qty: number
+  sharesBefore: number
+  price: number
+  currency: 'CAD' | 'USD'
   tradeValue: number
   capitalGain: number
   deviation: string
@@ -30,7 +33,11 @@ export type TradeRow = {
 
 export type AccountGroup = {
   type: string
+  id: string
   value: number
+  cash: number
+  net: number
+  color: string
   trades: TradeRow[]
 }
 
@@ -41,8 +48,9 @@ export const STAGE_CAPTIONS: Record<SceneId, string> = {
 }
 
 const target80 = { equity: 0.80, fixedIncome: 0.19, cash: 0.01 }
-const eqLm = 'equity-model-1m-plus'
-const fiModel = 'Nice-Fixed-Income-Model'
+const eqLm = 'Core Equity 1M+'
+const eqCore = 'Core Equity 0–500k'
+const fiModel = 'Core Fixed Income'
 
 const chen: HouseholdRow = {
   name: 'Chen Family',
@@ -86,7 +94,7 @@ export const stageBook = {
       equityDrift: 0.228,
       fixedIncomeDrift: 0.213,
       status: 'At Risk' as const,
-      equityModel: 'equity-model-0-500k',
+      equityModel: eqCore,
       fixedIncomeModel: fiModel,
       target: target80,
       current: { equity: 0.572, fixedIncome: 0.403, cash: 0.025 },
@@ -114,7 +122,7 @@ export const stageBook = {
       equityDrift: 0.20,
       fixedIncomeDrift: 0.19,
       status: 'At Risk' as const,
-      equityModel: 'equity-model-0-500k',
+      equityModel: eqCore,
       fixedIncomeModel: fiModel,
       target: target80,
       current: { equity: 1, fixedIncome: 0, cash: 0 },
@@ -123,36 +131,54 @@ export const stageBook = {
   featured: chen,
   rebalance: {
     household: 'Chen Family',
+    accountsInHousehold: chen.accounts,
     current: chen.current,
     target: chen.target,
-    tradeImpact: { equity: 1_650_000, fixedIncome: -1_380_000, cash: -42_000 },
+    tradeImpact: { equity: 1_650_000, fixedIncome: -1_382_000, cash: -40_178 },
     projected: { equity: 0.800, fixedIncome: 0.190, cash: 0.010 },
-    metrics: { trades: 38, buys: 24, sells: 14, netCash: -40_178 },
+    sleeveValues: {
+      equity: { current: 1_022_000, projected: 2_672_000, target: 2_672_000 },
+      fixedIncome: { current: 2_017_000, projected: 635_000, target: 635_000 },
+      cash: { current: 304_000, projected: 33_400, target: 33_400 },
+    },
+    metrics: { trades: 38, buys: 24, sells: 14, netCash: -40_178, usdNet: -2_140 },
     accounts: [
       {
         type: 'RRSP',
+        id: '8821',
         value: 237_800,
+        cash: 18_420,
+        net: -12_386,
+        color: '#3b82f6',
         trades: [
-          { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', action: 'SELL' as const, qty: -3144, tradeValue: -43_859, capitalGain: 12, deviation: 'FI +15.0%', status: 'Review' as const },
-          { ticker: 'XLV', name: 'Health Care Select Sector SPDR', action: 'BUY' as const, qty: 49, tradeValue: 9_702, capitalGain: 0, deviation: 'EQ −2.5%', status: 'Ready' as const },
-          { ticker: 'AAPL', name: 'Apple', action: 'BUY' as const, qty: 12, tradeValue: 5_144, capitalGain: 0, deviation: 'EQ −0.9%', status: 'Ready' as const },
-          { ticker: 'GOOG', name: 'Alphabet', action: 'BUY' as const, qty: 35, tradeValue: 16_627, capitalGain: 0, deviation: 'EQ −4.1%', status: 'Ready' as const },
+          { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', action: 'SELL' as const, qty: -3144, sharesBefore: 4200, price: 13.95, currency: 'CAD' as const, tradeValue: -43_859, capitalGain: 12, deviation: 'FI +15.0%', status: 'Review' as const },
+          { ticker: 'XLV', name: 'Health Care Select Sector SPDR', action: 'BUY' as const, qty: 49, sharesBefore: 0, price: 197.99, currency: 'USD' as const, tradeValue: 9_702, capitalGain: 0, deviation: 'EQ −2.5%', status: 'Ready' as const },
+          { ticker: 'AAPL', name: 'Apple', action: 'BUY' as const, qty: 12, sharesBefore: 0, price: 428.67, currency: 'USD' as const, tradeValue: 5_144, capitalGain: 0, deviation: 'EQ −0.9%', status: 'Ready' as const },
+          { ticker: 'GOOG', name: 'Alphabet', action: 'BUY' as const, qty: 35, sharesBefore: 0, price: 475.06, currency: 'USD' as const, tradeValue: 16_627, capitalGain: 0, deviation: 'EQ −4.1%', status: 'Ready' as const },
         ],
       },
       {
         type: 'TFSA',
+        id: '4410',
         value: 73_453,
+        cash: 8_210,
+        net: 51,
+        color: '#22c55e',
         trades: [
-          { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -5015, tradeValue: -5_015, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
-          { ticker: 'BN', name: 'Brookfield', action: 'BUY' as const, qty: 87, tradeValue: 5_066, capitalGain: 0, deviation: 'EQ −1.7%', status: 'Ready' as const },
+          { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -5015, sharesBefore: 5015, price: 1, currency: 'CAD' as const, tradeValue: -5_015, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
+          { ticker: 'BN', name: 'Brookfield', action: 'BUY' as const, qty: 87, sharesBefore: 0, price: 58.23, currency: 'CAD' as const, tradeValue: 5_066, capitalGain: 0, deviation: 'EQ −1.7%', status: 'Ready' as const },
         ],
       },
       {
         type: 'CAD TAXABLE',
+        id: '2294',
         value: 102_699,
+        cash: 41_200,
+        net: 17_186,
+        color: '#0891B2',
         trades: [
-          { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -32263, tradeValue: -32_263, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
-          { ticker: 'ZSP', name: 'BMO S&P 500 Index ETF', action: 'BUY' as const, qty: 425, tradeValue: 49_449, capitalGain: 0, deviation: 'EQ −12.9%', status: 'Ready' as const },
+          { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -32263, sharesBefore: 32263, price: 1, currency: 'CAD' as const, tradeValue: -32_263, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
+          { ticker: 'ZSP', name: 'BMO S&P 500 Index ETF', action: 'BUY' as const, qty: 425, sharesBefore: 0, price: 116.35, currency: 'CAD' as const, tradeValue: 49_449, capitalGain: 0, deviation: 'EQ −12.9%', status: 'Ready' as const },
         ],
       },
     ] satisfies AccountGroup[],
@@ -160,31 +186,38 @@ export const stageBook = {
   analytics: {
     household: 'Chen Family',
     total: chen.aum,
+    holdingsCount: 18,
     sleeves: {
       equity: { value: 1_022_000, weight: chen.current.equity, target: chen.target.equity },
       fixedIncome: { value: 2_017_000, weight: chen.current.fixedIncome, target: chen.target.fixedIncome },
       cash: { value: 304_000, weight: chen.current.cash, target: chen.target.cash },
-      offModel: { value: 110_000, weight: 0.033 },
+      offModel: { value: 110_000, weight: 0.033, count: 1 },
     },
     drift: chen.drift,
     sectors: [
-      { name: 'Other', current: 0.145, model: 0.329, drift: -0.184 },
-      { name: 'Utilities', current: 0.156, model: 0.056, drift: 0.10 },
-      { name: 'Health Care', current: 0.071, model: 0, drift: 0.071 },
-      { name: 'Information Technology', current: 0.13, model: 0.076, drift: 0.054 },
+      { name: 'Other', current: 0.145, model: 0.329, drift: -0.184, color: '#9aa8b6' },
+      { name: 'Utilities', current: 0.156, model: 0.056, drift: 0.10, color: '#5b9a8a' },
+      { name: 'Health Care', current: 0.071, model: 0, drift: 0.071, color: '#c47a8a' },
+      { name: 'Information Technology', current: 0.13, model: 0.076, drift: 0.054, color: '#6a92c4' },
+      { name: 'Industrials', current: 0.053, model: 0.086, drift: -0.033, color: '#8a9bb0' },
     ],
     currency: { cad: 0.917, usd: 0.083, cadValue: 3_063_000, usdValue: 277_000 },
+    currencySleeves: [
+      { id: 'EQ', label: 'Equity', total: 1_022_000, cad: 0.69, usd: 0.31 },
+      { id: 'FI', label: 'Fixed income', total: 2_017_000, cad: 1, usd: 0 },
+    ],
     holdings: [
-      { ticker: 'GIC', name: 'CCSCU GIC 3.45% 19JUL27A', sleeve: 'FI', account: 'RRSP 1', weight: 0.12, drift: 0.447, status: 'Overweight' },
-      { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', sleeve: 'FI', account: 'RRSP 1', weight: 0.094, drift: 0.447, status: 'Overweight' },
-      { ticker: 'DYN6004', name: 'Dynamic Power American Growth', sleeve: 'EQ', account: 'CAD TAXABLE', weight: 0.068, drift: 0.12, status: 'Off Model' },
-      { ticker: 'VSC', name: 'Vanguard CDN SHT TRM BD ETF', sleeve: 'FI', account: 'TFSA', weight: 0.058, drift: 0.447, status: 'Overweight' },
+      { ticker: 'GIC', name: 'CCSCU GIC 3.45% 19JUL27A', sleeve: 'FI' as const, account: 'RRSP 1', shares: 401_000, avgCost: 1, bookValue: 401_000, weight: 0.12, modelTarget: 0.19, drift: 0.447, status: 'Overweight' as const },
+      { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', sleeve: 'FI' as const, account: 'RRSP 1', shares: 22_500, avgCost: 13.95, bookValue: 314_000, weight: 0.094, modelTarget: 0.19, drift: 0.447, status: 'Overweight' as const },
+      { ticker: 'DYN6004', name: 'Dynamic Power American Growth', sleeve: 'EQ' as const, account: 'CAD TAXABLE', shares: 227_000, avgCost: 1, bookValue: 227_000, weight: 0.068, modelTarget: 0, drift: 0.12, status: 'Off Model' as const },
+      { ticker: 'VSC', name: 'Vanguard CDN SHT TRM BD ETF', sleeve: 'FI' as const, account: 'TFSA', shares: 7_840, avgCost: 24.7, bookValue: 194_000, weight: 0.058, modelTarget: 0.19, drift: 0.447, status: 'Overweight' as const },
     ],
     largest: [
       { ticker: 'GIC', name: 'CCSCU GIC 3.45% 19JUL27A', value: 401_000, weight: 0.12 },
       { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', value: 314_000, weight: 0.094 },
       { ticker: 'DYN6004', name: 'Dynamic Power American Growth', value: 227_000, weight: 0.068 },
       { ticker: 'XSH', name: 'iShares Core Canadian SHT ETF', value: 201_000, weight: 0.06 },
+      { ticker: 'VSC', name: 'Vanguard CDN SHT TRM BD ETF', value: 194_000, weight: 0.058 },
     ],
   },
 }

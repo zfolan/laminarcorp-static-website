@@ -1,0 +1,108 @@
+<style>
+  .aether-intro { max-width: 900px; margin-bottom: 24px; }
+  .aether-intro h2 { margin-bottom: 8px; }
+  .aether-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+  .aether-preview { overflow: hidden; border: 1px solid #26313d; border-radius: 12px; color: #eef2f4; background: #030506; box-shadow: 0 34px 100px rgba(0,0,0,.34); font-family: Inter, system-ui, sans-serif; }
+  .aether-preview * { box-sizing: border-box; }
+  .a-nav { position: relative; z-index: 8; height: 55px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.08); color: #8c989f; font-size: 8px; }
+  .a-brand { display: flex; align-items: center; gap: 9px; color: #eef2f4; font-weight: 700; letter-spacing: .16em; }
+  .a-mark { width: 23px; height: 23px; display: grid; place-items: center; border: 1px solid #81b8c8; color: #b5e3df; font-size: 9px; }
+  .a-links { display: flex; align-items: center; gap: 22px; }
+  .a-button { padding: 8px 11px; border-radius: 99px; color: #050809; background: #dce9e8; font-weight: 700; }
+  .a-kicker { color: #9dd6d2; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
+  .a-hero { position: relative; min-height: 590px; overflow: hidden; }
+  .a-field { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .a-field .quiet { fill: none; stroke: #31444e; stroke-width: .75; opacity: .4; }
+  .a-field .active { fill: none; stroke: url(#aetherGradient); stroke-width: 1.25; opacity: .82; }
+  .a-field circle { fill: #a8ddd8; filter: drop-shadow(0 0 5px rgba(168,221,216,.68)); }
+  .a-field .ghost { fill: #58707a; filter: none; opacity: .62; }
+  .a-hero::after { position: absolute; inset: 0; background: radial-gradient(circle at 67% 50%, rgba(57,112,126,.09), transparent 28%), linear-gradient(90deg, #030506 0 31%, transparent 59%); pointer-events: none; content: ''; }
+  .a-copy { position: relative; z-index: 4; width: 44%; padding: 118px 0 0 7%; }
+  .a-copy h1 { margin: 16px 0 17px; font-size: clamp(58px, 6.6vw, 90px); font-weight: 500; line-height: .87; letter-spacing: -.065em; }
+  .a-copy p { max-width: 430px; margin: 0; color: #98a5aa; font-size: 13px; line-height: 1.55; }
+  .a-copy .a-button { display: inline-block; margin-top: 23px; font-size: 9px; }
+  .a-node { position: absolute; z-index: 5; min-width: 122px; padding: 10px 11px; border: 1px solid rgba(136,188,195,.27); border-radius: 4px; background: rgba(5,9,11,.78); backdrop-filter: blur(9px); color: #7e8e94; font: 600 7px/1.4 ui-monospace, monospace; }
+  .a-node strong { display: block; margin-top: 6px; color: #eef2f4; font: 600 11px/1.2 Inter, sans-serif; }
+  .an1 { top: 120px; right: 23%; } .an2 { top: 245px; right: 7%; border-color: #88bdc3; } .an3 { right: 29%; bottom: 105px; } .an4 { right: 8%; bottom: 37px; }
+  .a-node.is-active { box-shadow: 0 0 0 1px rgba(168,221,216,.15), 0 18px 50px rgba(0,0,0,.36); }
+  .a-scroll-note { position: absolute; z-index: 5; bottom: 30px; left: 7%; color: #526168; font: 600 6px/1 ui-monospace, monospace; letter-spacing: .13em; }
+
+  .a-act { position: relative; min-height: 480px; overflow: hidden; border-top: 1px solid rgba(255,255,255,.08); }
+  .a-act__copy { position: relative; z-index: 5; width: 38%; padding: 85px 0 0 7%; }
+  .a-act:nth-child(even) .a-act__copy { margin-left: 55%; }
+  .a-act h2 { margin: 13px 0 13px; font-size: 43px; font-weight: 500; line-height: .94; letter-spacing: -.05em; }
+  .a-act p { max-width: 360px; margin: 0; color: #919ea4; font-size: 12px; line-height: 1.58; }
+  .a-act__facts { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+  .a-act__facts span { padding: 6px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 99px; color: #9eb1b5; font: 600 7px/1 ui-monospace, monospace; }
+  .a-act__visual { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .a-act__visual path { fill: none; stroke: #334951; stroke-width: .8; opacity: .55; }
+  .a-act__visual .signal { stroke: #9dd6d2; stroke-width: 1.3; opacity: .9; }
+  .a-act__visual circle { fill: #a8ddd8; }
+  .a-act::after { position: absolute; inset: 0; pointer-events: none; content: ''; }
+  .act-one::after { background: linear-gradient(90deg, #030506 0 35%, transparent 60%); }
+  .act-two::after { background: linear-gradient(270deg, #030506 0 35%, transparent 60%); }
+  .act-three::after { background: linear-gradient(90deg, #030506 0 35%, transparent 60%); }
+  .a-resolver { position: absolute; z-index: 4; top: 50%; right: 19%; width: 155px; height: 155px; display: grid; place-items: center; border: 1px solid rgba(157,214,210,.28); border-radius: 50%; color: #9dd6d2; background: radial-gradient(circle, rgba(32,72,77,.34), transparent 68%); box-shadow: 0 0 70px rgba(93,166,169,.1); transform: translateY(-50%); font: 600 7px/1.45 ui-monospace, monospace; text-align: center; }
+  .a-resolver::before { position: absolute; inset: 22px; border: 1px solid rgba(157,214,210,.22); border-radius: 50%; content: ''; }
+  .a-output { position: absolute; z-index: 4; top: 86px; right: 6%; width: 37%; }
+  .output-line { min-height: 54px; padding: 12px 13px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.12); color: #7f8f95; font-size: 9px; }
+  .output-line b { color: #dce9e8; font-weight: 600; }
+  .output-line.is-ready { color: #9dd6d2; border-color: rgba(157,214,210,.42); }
+
+  .a-control { padding: 86px 7%; border-top: 1px solid rgba(255,255,255,.08); background: radial-gradient(circle at 50% 0, rgba(65,128,134,.12), transparent 38%), #030506; }
+  .a-control__head { display: grid; grid-template-columns: 1.15fr .85fr; gap: 80px; align-items: end; }
+  .a-control h2 { margin: 13px 0 0; font-size: 48px; font-weight: 500; line-height: .94; letter-spacing: -.05em; }
+  .a-control__head p { margin: 0; color: #919ea4; font-size: 12px; line-height: 1.6; }
+  .control-lines { margin-top: 55px; display: grid; grid-template-columns: repeat(3,1fr); border-block: 1px solid rgba(255,255,255,.1); }
+  .control-lines div { min-height: 125px; padding: 18px; border-right: 1px solid rgba(255,255,255,.08); }
+  .control-lines div:last-child { border-right: 0; }
+  .control-lines span { color: #9dd6d2; font: 600 7px/1 ui-monospace, monospace; }
+  .control-lines b { display: block; margin: 30px 0 7px; font-size: 14px; font-weight: 600; }
+  .control-lines p { margin: 0; color: #75848a; font-size: 9px; line-height: 1.45; }
+  .a-end { padding: 100px 7% 50px; text-align: center; background: linear-gradient(180deg, #030506, #071011); }
+  .a-end h2 { max-width: 780px; margin: 14px auto 23px; font-size: 57px; font-weight: 500; line-height: .93; letter-spacing: -.055em; }
+  .a-end .a-button { display: inline-block; font-size: 9px; }
+  .a-footer { margin-top: 85px; padding-top: 18px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); color: #64747a; font-size: 8px; }
+
+  .concept-notes { display: grid; gap: 11px; }
+  .note { padding: 15px; border: 1px solid #26313d; border-radius: 8px; background: #0c1118; }
+  .note span { color: #83a9cc; font: 600 8px/1 ui-monospace, monospace; }
+  .note h3 { margin: 8px 0 6px; color: #e8edf2; font-size: 14px; }
+  .note p { margin: 0; color: #98a3af; font-size: 11px; line-height: 1.5; }
+  .approve { padding: 16px; border: 1px solid #3c5664; border-radius: 8px; color: #e8edf2; background: #101a20; cursor: pointer; }
+  .approve:hover, .approve.selected { border-color: #9dd6d2; box-shadow: 0 0 0 1px #9dd6d2; }
+  .approve h3 { margin: 0 0 5px; }
+  .approve p { margin: 0; color: #98a3af; font-size: 11px; line-height: 1.45; }
+  @media (max-width: 980px) { .aether-layout { grid-template-columns: 1fr; } }
+</style>
+
+<div class="aether-intro">
+  <h2>Aether Engine — refined full-page direction</h2>
+  <p class="subtitle">The user-selected Engine Graph structure is rebuilt around one continuous Aether system. No dashboard collage, floating card stack, or unrelated section islands. The same network changes state as the advisor workflow moves from coverage to decision to output.</p>
+</div>
+
+<div class="aether-layout">
+  <div class="aether-preview">
+    <nav class="a-nav"><div class="a-brand"><span class="a-mark">Λ</span>LAMINAR / APEX</div><div class="a-links"><span>PLATFORM</span><span>CONTROL</span><span>COMPANY</span><b class="a-button">REQUEST ACCESS</b></div></nav>
+    <section class="a-hero">
+      <svg class="a-field" viewBox="0 0 1000 590" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="aetherGradient" x1="0" x2="1"><stop offset="0" stop-color="#465b66"/><stop offset=".52" stop-color="#a8ddd8"/><stop offset="1" stop-color="#567b8f"/></linearGradient></defs><path class="quiet" d="M395 78 L548 118 L651 67 L772 142 L920 86 M430 390 L560 302 L702 358 L828 277 L966 382 M548 118 L560 302 M651 67 L772 142 M772 142 L828 277 M702 358 L828 277"/><path class="active" d="M390 78 C516 112 517 218 611 229 C716 242 707 340 815 353 C881 361 911 389 966 425"/><circle class="ghost" cx="395" cy="78" r="2"/><circle cx="548" cy="118" r="3"/><circle class="ghost" cx="651" cy="67" r="2"/><circle cx="611" cy="229" r="4"/><circle class="ghost" cx="772" cy="142" r="2"/><circle cx="815" cy="353" r="3"/><circle class="ghost" cx="920" cy="86" r="2"/><circle cx="966" cy="425" r="3"/></svg>
+      <div class="a-copy"><span class="a-kicker">THE ADVISOR INTELLIGENCE ENGINE</span><h1>Know what needs you next.</h1><p>Apex turns the active client book into a connected path from coverage, to priority, to reviewed action.</p><b class="a-button">ENTER THE SYSTEM →</b></div>
+      <div class="a-node an1"><span>01 / INGEST</span><strong>Book coverage</strong></div><div class="a-node an2 is-active"><span>02 / PRIORITIZE</span><strong>Household queue</strong></div><div class="a-node an3"><span>03 / RESOLVE</span><strong>Decision review</strong></div><div class="a-node an4"><span>04 / CARRY</span><strong>Client action</strong></div><div class="a-scroll-note">SCROLL TO FOLLOW THE DECISION ↓</div>
+    </section>
+
+    <section class="a-act act-one"><svg class="a-act__visual" viewBox="0 0 1000 480"><path d="M470 40 L582 121 L687 76 L803 158 L932 105 M471 421 L586 330 L716 392 L835 305 L970 404"/><path class="signal" d="M430 70 C546 110 552 183 642 232 C733 281 796 230 936 345"/><circle cx="470" cy="40" r="2"/><circle cx="582" cy="121" r="2"/><circle cx="642" cy="232" r="4"/><circle cx="835" cy="305" r="2"/><circle cx="936" cy="345" r="3"/></svg><div class="a-act__copy"><span class="a-kicker">01 / INGEST</span><h2>Begin with a trusted book.</h2><p>Holdings sources, versions, accounts, models, and coverage converge into one active data boundary.</p><div class="a-act__facts"><span>AUM + COVERAGE</span><span>VERSIONED HOLDINGS</span><span>MODEL READINESS</span></div></div>
+    </section>
+
+    <section class="a-act act-two"><svg class="a-act__visual" viewBox="0 0 1000 480"><path d="M32 100 L174 144 L311 77 L435 168 L540 103 M15 389 L168 309 L303 371 L446 287 L566 352"/><path class="signal" d="M38 364 C170 306 239 348 352 245 C414 188 456 161 566 134"/><circle cx="32" cy="100" r="2"/><circle cx="174" cy="144" r="2"/><circle cx="352" cy="245" r="4"/><circle cx="446" cy="287" r="2"/><circle cx="566" cy="134" r="3"/></svg><div class="a-resolver">APEX / PRIORITY<br><strong style="color:#eef2f4;font:600 12px Inter">Northbridge</strong><br>CASH DRIFT · $248K</div><div class="a-act__copy"><span class="a-kicker">02 / PRIORITIZE</span><h2>Resolve attention from context.</h2><p>Household drift, model alignment, status, and material impact reorganize the network around the work that needs judgment.</p><div class="a-act__facts"><span>DRIFT-RANKED</span><span>AT RISK / REVIEW</span><span>MATERIAL IMPACT</span></div></div>
+    </section>
+
+    <section class="a-act act-three"><svg class="a-act__visual" viewBox="0 0 1000 480"><path d="M405 81 L547 154 L652 93 L753 190 L910 128 M440 390 L562 306 L692 367 L812 284 L953 401"/><path class="signal" d="M402 81 C531 142 516 257 642 248 C772 238 791 341 952 401"/><circle cx="405" cy="81" r="2"/><circle cx="547" cy="154" r="3"/><circle cx="642" cy="248" r="4"/><circle cx="812" cy="284" r="2"/><circle cx="952" cy="401" r="3"/></svg><div class="a-act__copy"><span class="a-kicker">03 / REVIEW → 04 / CARRY</span><h2>Keep the decision intact.</h2><p>Allocation, models, cash, tax context, proposed trades, diagnostics, rationale, and review state move together into the output.</p><div class="a-act__facts"><span>ADVISOR CONTROL</span><span>VALIDATED ORDERS</span><span>TRACEABLE RATIONALE</span></div></div><div class="a-output"><div class="output-line is-ready"><span>CLIENT PROPOSAL</span><b>READY</b></div><div class="output-line"><span>ORDER EXPORT</span><b>VALIDATED</b></div><div class="output-line"><span>STAGED DEPLOYMENT</span><b>AVAILABLE</b></div></div>
+    </section>
+
+    <section class="a-control"><div class="a-control__head"><div><span class="a-kicker">THE ENGINE SUPPORTS JUDGMENT</span><h2>Intelligence without removing control.</h2></div><p>Apex can rank, compare, diagnose, and explain. The advisor still reviews the recommendation, resolves exceptions, and chooses what moves forward.</p></div><div class="control-lines"><div><span>01 / REVIEW</span><b>Explicit decisions</b><p>Approve, change, or decline recommendation rows.</p></div><div><span>02 / EXPLAIN</span><b>Required rationale</b><p>Exceptions remain attached to the reviewed order set.</p></div><div><span>03 / TRACE</span><b>Versioned history</b><p>Data, engine baseline, adjustments, and outputs stay connected.</p></div></div></section>
+
+    <section class="a-end"><span class="a-kicker">LAMINAR APEX</span><h2>A living system for portfolio decisions that need professional judgment.</h2><b class="a-button">REQUEST ACCESS →</b><footer class="a-footer"><span>© LAMINAR</span><span>PLATFORM · SECURITY · COMPANY</span></footer></section>
+  </div>
+
+  <aside class="concept-notes"><div class="note"><span>21ST FOUNDATION</span><h3>Woven Light Hero · ID 5240</h3><p>Use its Three.js particle-sculpture and pointer response as the rendering reference, but form a data network instead of a decorative knot.</p></div><div class="note"><span>STRUCTURAL FOUNDATION</span><h3>Engine Graph</h3><p>The previously selected graph layout stays, but the network becomes a continuous system rather than separate cards and section diagrams.</p></div><div class="note"><span>VISUAL RESTRAINT</span><h3>Platinum + spectral teal</h3><p>No purple SaaS gradient, dashboard collage, glass stack, or feature-card grid. Typography and network geometry carry the page.</p></div><div class="note"><span>MOTION MODEL</span><h3>One field, three transformations</h3><p>The same particle system converges around coverage, reprioritizes around a household, then branches into outputs. Reduced motion shows three static states.</p></div><div class="approve" data-choice="approve-aether-engine" onclick="toggleSelect(this)"><h3>Use Aether Engine as the direction</h3><p>Click to approve this full-page design language for the replacement specification.</p></div></aside>
+</div>

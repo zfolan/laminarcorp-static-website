@@ -1,25 +1,27 @@
 import { useEffect } from 'react'
 
-type Meta = { title: string; description: string }
+type PageMeta = {
+  title: string
+  description: string
+}
 
-const upsertMeta = (selector: string, attribute: string, value: string) => {
+const setMeta = (selector: string, attribute: 'name' | 'property', key: string, value: string) => {
   let element = document.head.querySelector<HTMLMetaElement>(selector)
   if (!element) {
     element = document.createElement('meta')
-    const [name, key] = selector.includes('property=') ? ['property', selector.match(/"(.+)"/)?.[1]] : ['name', selector.match(/"(.+)"/)?.[1]]
-    if (key) element.setAttribute(name, key)
+    element.setAttribute(attribute, key)
     document.head.appendChild(element)
   }
-  element.setAttribute(attribute, value)
+  element.content = value
 }
 
-export const usePageMeta = ({ title, description }: Meta) => {
+export const usePageMeta = ({ title, description }: PageMeta) => {
   useEffect(() => {
     document.title = title
-    upsertMeta('meta[name="description"]', 'content', description)
-    upsertMeta('meta[property="og:title"]', 'content', title)
-    upsertMeta('meta[property="og:description"]', 'content', description)
-    upsertMeta('meta[property="og:type"]', 'content', 'website')
-    upsertMeta('meta[property="og:url"]', 'content', window.location.href)
+    setMeta('meta[name="description"]', 'name', 'description', description)
+    setMeta('meta[property="og:title"]', 'property', 'og:title', title)
+    setMeta('meta[property="og:description"]', 'property', 'og:description', description)
+    setMeta('meta[property="og:type"]', 'property', 'og:type', 'website')
+    setMeta('meta[property="og:url"]', 'property', 'og:url', window.location.href)
   }, [description, title])
 }

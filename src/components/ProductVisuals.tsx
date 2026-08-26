@@ -1,102 +1,191 @@
-import { exceptionQueue, proposedTrades, sampleHousehold } from '../data/samplePortfolio'
+import { AnimatePresence, LayoutGroup, motion, useTransform, type MotionValue } from 'motion/react'
+import type { ReactNode } from 'react'
+import { ArrowLeftRight, ArrowRight, Check, ChevronRight, Database, FileText, Gauge, Layers3, ShieldCheck, Users } from 'lucide-react'
+import { landingContent } from '../data/landingContent'
+import type { DecisionRecord } from '../types/content'
 
-const AllocationBand = ({ equity, fixed, cash, label }: { equity: number; fixed: number; cash: number; label: string }) => (
-  <div className="allocation-row">
-    <div className="allocation-row__label"><span>{label}</span><small>{equity} / {fixed} / {cash}</small></div>
-    <div className="allocation-band" aria-label={`${label}: ${equity}% equity, ${fixed}% fixed income, ${cash}% cash`}>
-      <i className="allocation-equity" style={{ width: `${equity}%` }} />
-      <i className="allocation-fixed" style={{ width: `${fixed}%` }} />
-      <i className="allocation-cash" style={{ width: `${cash}%` }} />
+const sidebarItems = [
+  { label: 'Priority queue', icon: Gauge },
+  { label: 'Households', icon: Users },
+  { label: 'Models', icon: Layers3 },
+  { label: 'Rebalance', icon: ArrowLeftRight },
+  { label: 'Proposals', icon: FileText },
+  { label: 'Holdings data', icon: Database },
+]
+
+const WorkspaceChrome = ({ title, children, compact = false }: { title: string; children: ReactNode; compact?: boolean }) => (
+  <div className={`workspace ${compact ? 'workspace--compact' : ''}`}>
+    <div className="workspace__bar">
+      <div className="workspace__mark"><img src="/laminar-mark.svg" alt="" /></div>
+      <div className="workspace__identity">
+        <span>{compact ? 'YOUR BOOK' : 'HOUSEHOLDS'}</span><i>/</i><strong>{title}</strong>
+      </div>
+      <span>APEX · DEMO WORKSPACE</span>
     </div>
+    {children}
   </div>
 )
 
-export const HouseholdVisual = () => (
-  <div className="product-frame household-visual">
-    <div className="product-frame__bar"><span>MERIDIAN HOUSEHOLD</span><span>COORDINATED VIEW</span></div>
-    <div className="household-visual__body">
-      <div className="account-stack">
-        {sampleHousehold.accounts.map((account) => (
-          <div className="account-row" key={account.id}>
-            <span><b>{account.name}</b><small>{account.id} · {account.registration}</small></span>
-            <em>{account.currency}</em>
-            <strong>{account.value}</strong>
-          </div>
-        ))}
+const WorkspaceSidebar = () => (
+  <aside className="workspace-sidebar">
+    {sidebarItems.map(({ label, icon: Icon }, index) => (
+      <div className={`workspace-sidebar__item ${index === 0 ? 'is-active' : ''}`} key={label} title={label}>
+        <Icon size={14} />
+        <span className="sr-only">{label}</span>
       </div>
-      <div className="convergence" aria-hidden="true"><i /><i /><i /><i /><b /></div>
-      <div className="household-summary">
-        <span>COMPLETE HOUSEHOLD</span>
-        <strong>{sampleHousehold.value}</strong>
-        <p>{sampleHousehold.model}</p>
-        <AllocationBand equity={75} fixed={22} cash={3} label="Current allocation" />
-        <div className="summary-stats"><span><small>ACCOUNTS</small>04</span><span><small>CURRENCIES</small>CAD / USD</span><span><small>MODEL DRIFT</small>4.8%</span></div>
-      </div>
+    ))}
+    <div className="workspace-sidebar__status">
+      <i /><span className="sr-only">All sources connected</span>
     </div>
-  </div>
+  </aside>
 )
 
-export const RebalanceVisual = () => (
-  <div className="product-frame rebalance-visual">
-    <div className="product-frame__bar"><span>PROPOSED HOUSEHOLD CHANGES</span><span>REVIEW 02 / READY 02</span></div>
-    <div className="allocation-comparison">
-      <AllocationBand equity={75} fixed={22} cash={3} label="Current household" />
-      <AllocationBand equity={70} fixed={27} cash={3} label="Target model" />
-    </div>
-    <div className="trade-table" role="table" aria-label="Fictional proposed trades">
-      <div className="trade-table__head" role="row"><span>ACTION</span><span>SECURITY</span><span>ACCOUNT</span><span>AMOUNT</span><span>STATE</span></div>
-      {proposedTrades.map((trade) => (
-        <div className="trade-table__row" role="row" key={`${trade.ticker}-${trade.account}`}>
-          <span className={trade.side === 'Buy' ? 'positive' : 'review'}>{trade.side}</span>
-          <span><b>{trade.ticker}</b><small>{trade.security}</small></span>
-          <span>{trade.account}</span><span>{trade.amount}</span>
-          <span className={trade.status === 'Ready' ? 'positive' : 'review'}>{trade.status}</span>
+const QueueState = ({ state }: { state: DecisionRecord['state'] }) => <span className={`queue-state queue-state--${state}`}>{state.toUpperCase()}</span>
+
+const DecisionQueue = ({ phase }: { phase: 0 | 1 | 2 }) => (
+  <section className="decision-queue">
+    <div className="decision-queue__heading"><span className="data-label data-label--blue">TODAY / 08 ITEMS</span><h3>Needs attention</h3></div>
+    <AnimatePresence initial={false} mode="popLayout">
+      {landingContent.decision.records.map((record, index) => {
+        if (index === 0 && phase > 0) return null
+        return (
+          <motion.article key={record.household} layoutId={index === 0 ? 'selected-decision' : undefined} className={`queue-card ${index === 0 ? 'is-selected' : ''}`}>
+            <div><strong>{record.household}</strong><ChevronRight size={13} /></div>
+            <div><span>{record.signal}</span><b>{record.impact}</b></div>
+            <QueueState state={record.state} />
+          </motion.article>
+        )
+      })}
+    </AnimatePresence>
+  </section>
+)
+
+const allocations = [
+  { label: 'Cash', current: '12.8%', target: '8.0%', width: '40%', tone: 'amber' },
+  { label: 'Equity', current: '54.2%', target: '57.5%', width: '76%', tone: 'blue' },
+  { label: 'Fixed income', current: '28.0%', target: '29.5%', width: '54%', tone: 'silver' },
+  { label: 'Alternatives', current: '5.0%', target: '5.0%', width: '25%', tone: 'muted' },
+]
+
+const ReviewPanel = ({ phase }: { phase: 0 | 1 | 2 }) => (
+  <section className={`review-panel review-panel--phase-${phase}`}>
+    {phase === 0 ? (
+      <motion.div className="review-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <span className="data-label data-label--blue">HOUSEHOLD REVIEW</span>
+        <h3>Select a priority to resolve</h3>
+        <p>The decision workspace keeps the relevant context ready while the queue stays focused.</p>
+      </motion.div>
+    ) : (
+      <motion.div className="review-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.24 }}>
+        <div className="review-header">
+          <div><span className="data-label data-label--blue">HOUSEHOLD / {phase === 2 ? 'APPROVED' : 'NEEDS REVIEW'}</span><h3>Northbridge Household</h3></div>
+          <QueueState state={phase === 2 ? 'ready' : 'review'} />
         </div>
+        <motion.div className="signal-band" layoutId="selected-decision">
+          <div><span className="data-label">PRIMARY SIGNAL</span><strong>Cash allocation exceeds mandate by 4.8%</strong></div>
+          <b>$248,320</b>
+        </motion.div>
+        <div className="review-metrics">
+          {[['PORTFOLIO', '$5.18M'], ['CASH', '12.8%'], ['TARGET', '8.0%']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+        </div>
+        <div className="allocation-heading"><strong>Proposed allocation</strong><span>WITHIN POLICY</span></div>
+        <div className="allocations">
+          {allocations.map((item) => (
+            <div className="allocation" key={item.label}>
+              <div><span>{item.label}</span><b>{item.current} → {item.target}</b></div>
+              <div className="allocation__track"><motion.i className={`allocation__fill allocation__fill--${item.tone}`} initial={false} animate={{ width: phase === 2 ? item.width : '12%' }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} /></div>
+            </div>
+          ))}
+        </div>
+        <div className={`approval-bar ${phase === 2 ? 'is-approved' : ''}`}>
+          <span><ShieldCheck size={14} /> {phase === 2 ? 'Decision approved' : 'Policy checks passed'}</span>
+          <button type="button" tabIndex={-1}>{phase === 2 ? 'Approved' : 'Approve decision'} <ArrowRight size={13} /></button>
+        </div>
+      </motion.div>
+    )}
+  </section>
+)
+
+export const ApexDecisionWorkspace = ({ phase }: { phase: 0 | 1 | 2 }) => (
+  <LayoutGroup id={`decision-${phase}`}>
+    <div className={`apex-decision apex-decision--${phase}`}>
+      <WorkspaceChrome title="HOUSEHOLD REVIEW">
+        <div className="workspace__body">
+          <WorkspaceSidebar />
+          <DecisionQueue phase={phase} />
+          <ReviewPanel phase={phase} />
+        </div>
+      </WorkspaceChrome>
+    </div>
+  </LayoutGroup>
+)
+
+export const HeroWorkspace = ({ y, opacity }: { y?: MotionValue<number>; opacity?: MotionValue<number> }) => (
+  <motion.div className="hero-workspace" style={{ y, opacity }} aria-hidden="true">
+    <WorkspaceChrome title="DECISION WORKSPACE" compact>
+      <div className="workspace__body">
+        <WorkspaceSidebar />
+        <section className="hero-queue">
+        <div className="hero-queue__heading"><div><span className="data-label data-label--blue">TODAY</span><h3>Decision queue</h3></div><span className="data-label">08 ITEMS · 03 NEED REVIEW</span></div>
+          <div className="hero-summary">
+            {[['CONNECTED HOUSEHOLDS', '148'], ['ACCOUNTS', '412'], ['MANDATE CHECKS', '23']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+          </div>
+          <div className="hero-table__head"><span>HOUSEHOLD</span><span>SIGNAL</span><span>IMPACT</span><span>STATE</span></div>
+          {landingContent.decision.records.slice(0, 3).map((record, index) => (
+            <div className={`hero-table__row ${index === 0 ? 'is-selected' : ''}`} key={record.household}>
+              <strong>{record.household}</strong><span>{record.signal}</span><b>{record.impact}</b><QueueState state={record.state} />
+            </div>
+          ))}
+        </section>
+      </div>
+    </WorkspaceChrome>
+  </motion.div>
+)
+
+export const ContextFlow = ({ progress, reduced }: { progress: MotionValue<number>; reduced: boolean }) => (
+  <ContextFlowContent progress={progress} reduced={reduced} />
+)
+
+const ContextFlowContent = ({ progress, reduced }: { progress: MotionValue<number>; reduced: boolean }) => {
+  const leftX = useTransform(progress, [0, 1], [-90, 0])
+  const rightX = useTransform(progress, [0, 1], [90, 0])
+  return <div className="context-flow" aria-hidden="true">
+    <div className="context-flow__rail"><span>CONNECTED CONTEXT</span><motion.i style={reduced ? undefined : { scaleY: progress }} /></div>
+    <div className="context-flow__sources context-flow__sources--left">
+      {landingContent.context.sources.filter((item) => item.side === 'left').map((item) => (
+        <motion.div key={item.label} style={reduced ? undefined : { x: leftX, opacity: progress }}><span><i />{item.label}</span><b>{item.value}</b></motion.div>
       ))}
     </div>
-  </div>
-)
-
-export const TaxLocationVisual = () => (
-  <div className="product-frame location-visual">
-    <div className="product-frame__bar"><span>IMPLEMENTATION CONTEXT</span><span>HOUSEHOLD / 0248</span></div>
-    <div className="location-matrix">
-      <div className="matrix-heading"><span>PROPOSED CHANGE</span><span>REGISTERED</span><span>NON-REGISTERED</span><span>USD</span></div>
-      {[
-        ['Increase fixed income', 'Available room', 'Gain considered', 'Currency mismatch'],
-        ['Reduce concentration', '—', 'Estimated gain', '—'],
-        ['Use available cash', '$41,200 CAD', '$28,800 CAD', 'US$19,400'],
-      ].map((row) => <div className="matrix-row" key={row[0]}>{row.map((cell, index) => <span key={`${index}-${cell}`} className={cell.includes('mismatch') || cell.includes('gain') || cell.includes('Gain') ? 'review' : index ? '' : 'matrix-label'}>{cell}</span>)}</div>)}
+    <div className="context-flow__sources context-flow__sources--right">
+      {landingContent.context.sources.filter((item) => item.side === 'right').map((item) => (
+        <motion.div key={item.label} style={reduced ? undefined : { x: rightX, opacity: progress }}><span><i />{item.label}</span><b>{item.value}</b></motion.div>
+      ))}
     </div>
-    <div className="context-note"><span>ACCOUNT LOCATION</span><p>Account registration, available cash, currency, and gain context remain visible as the implementation plan is reviewed.</p></div>
+    <div className="context-flow__resolver"><span>APEX RESOLVER</span><strong>Context matched</strong><i /></div>
+    <div className="context-flow__packet"><div><span>DECISION PACKET / 00182</span><strong>Northbridge Household</strong></div><QueueState state="review" /></div>
   </div>
-)
+}
 
-export const ExceptionVisual = () => (
-  <div className="product-frame exception-visual">
-    <div className="product-frame__bar"><span>EXCEPTION REVIEW</span><span>03 REQUIRE JUDGMENT</span></div>
-    <div className="exception-list">
-      {exceptionQueue.map((exception) => <div className={`exception-row exception-row--${exception.tone}`} key={exception.title}><span className="exception-type">{exception.type}</span><span><b>{exception.title}</b><small>{exception.detail}</small></span><strong>{exception.value}</strong><button type="button" aria-label={`Review ${exception.title}`}>Review <span aria-hidden="true">→</span></button></div>)}
+export const OutputFlow = ({ progress, reduced }: { progress: MotionValue<number>; reduced: boolean }) => {
+  const leftX = useTransform(progress, [0, 1], [0, -18])
+  const rightX = useTransform(progress, [0, 1], [70, 0])
+  const rightOpacity = useTransform(progress, [0.1, 0.65], [0.35, 1])
+  return (
+    <div className="output-flow" aria-hidden="true">
+      <motion.article className="approved-record" style={reduced ? undefined : { x: leftX }}>
+        <div className="approved-record__head"><div><span>DECISION / 00182</span><strong>Northbridge Household</strong></div><span className="approved-pill"><Check size={12} /> APPROVED</span></div>
+        {[['ACTION', 'Rebalance cash to 8.0% target'], ['APPROVED BY', 'N. Patel · 10:14 MT'], ['POLICY', 'All mandate checks passed'], ['ESTIMATED TRADES', '6 orders · $248,320']].map(([label, value]) => <div className="approved-record__row" key={label}><span>{label}</span><strong>{value}</strong></div>)}
+      </motion.article>
+      <div className="output-bridge"><span>CONTEXT CARRIES<br />FORWARD</span><i /><ArrowRight size={18} /></div>
+      <motion.article className="proposal" style={reduced ? undefined : { x: rightX, opacity: rightOpacity }}>
+        <div className="proposal__bar"><span>LAMINAR / APEX</span><span>PROPOSAL 00182</span></div>
+        <div className="proposal__body">
+          <span>PORTFOLIO RECOMMENDATION</span><h3>Northbridge Household</h3><small>Prepared 24 August 2026</small><hr />
+          <span>RECOMMENDATION</span><p>Rebalance excess cash across the existing strategic allocation while maintaining mandate and liquidity constraints.</p>
+          <div className="proposal__metrics">{[['CURRENT CASH', '12.8%'], ['PROPOSED', '8.0%'], ['EST. TRADES', '$248k']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+          <small>Prepared from the approved Apex decision record. Final execution remains subject to advisor confirmation.</small>
+        </div>
+      </motion.article>
     </div>
-    <div className="routine-strip"><span>05 routine recommendations</span><span className="positive">Ready to continue</span></div>
-  </div>
-)
-
-export const ReviewVisual = () => (
-  <div className="product-frame review-visual">
-    <div className="product-frame__bar"><span>PORTFOLIO-MANAGER REVIEW</span><span>VERSION 03</span></div>
-    <div className="review-grid">
-      <div className="review-primary">
-        <span className="mono-label">PROPOSED CHANGE / NR-2901</span>
-        <div className="review-change"><h3>Sell Northfield Equity</h3><strong>$86,000</strong></div>
-        <p>Reduce household concentration while moving the complete portfolio toward its target allocation.</p>
-        <div className="review-context"><span>REVIEW CONTEXT</span><b>Estimated taxable gain</b><strong>$14,820</strong></div>
-        <div className="review-actions"><button type="button" className="button button--quiet">Modify</button><button type="button" className="button button--primary">Approve recommendation</button></div>
-      </div>
-      <aside className="review-summary">
-        <span className="mono-label">HOUSEHOLD SUMMARY</span>
-        <dl><div><dt>Proposed trades</dt><dd>08</dd></div><div><dt>Ready</dt><dd className="positive">05</dd></div><div><dt>Exceptions resolved</dt><dd>03</dd></div><div><dt>Final approver</dt><dd>Portfolio manager</dd></div></dl>
-      </aside>
-    </div>
-  </div>
-)
+  )
+}

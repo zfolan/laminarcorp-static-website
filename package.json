@@ -8,31 +8,38 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "remotion:studio": "remotion studio src/remotion/index.ts --no-open",
-    "remotion:still": "remotion still src/remotion/index.ts One-Household-One-Coordinated-Decision"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/instrument-sans": "^5.3.0",
-    "@remotion/player": "^4.0.506",
-    "@remotion/transitions": "^4.0.506",
+    "@tailwindcss/vite": "^4.3.3",
+    "framer-motion": "^13.1.1",
+    "lucide-react": "^0.468.0",
+    "motion": "^12.43.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.1.5",
-    "remotion": "^4.0.506"
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^26.3.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@remotion/cli": "^4.0.506",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "vitest": "^2.1.8"
   }
 }

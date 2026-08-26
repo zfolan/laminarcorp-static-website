@@ -1,0 +1,115 @@
+<style>
+  .review-intro { max-width: 850px; margin-bottom: 24px; }
+  .review-intro h2 { margin-bottom: 8px; }
+  .polish-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  .preview-shell { border: 1px solid #26313d; border-radius: 12px; overflow: hidden; background: #07090d; box-shadow: 0 28px 80px rgba(0,0,0,.28); }
+  .preview-label { padding: 9px 13px; border-bottom: 1px solid #26313d; color: #83a9cc; background: #0c1118; font: 600 9px/1 ui-monospace, monospace; letter-spacing: .12em; }
+  .desktop-hero { position: relative; min-height: 610px; overflow: hidden; color: #e8edf2; background: radial-gradient(circle at 72% 43%, rgba(55,91,136,.12), transparent 32%), #07090d; font-family: Inter, system-ui, sans-serif; }
+  .desktop-hero * { box-sizing: border-box; }
+  .laminar-nav { position: relative; z-index: 10; height: 58px; padding: 0 34px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(51,64,77,.48); color: #98a3af; font-size: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #e8edf2; font-weight: 700; letter-spacing: .16em; }
+  .brand-mark { width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid #5b8def; color: #83a9cc; font-size: 11px; }
+  .nav-links { display: flex; align-items: center; gap: 24px; }
+  .nav-cta { padding: 9px 13px; border-radius: 4px; color: #08101a; background: #83a9cc; font-weight: 700; }
+  .copy-block { position: absolute; z-index: 7; top: 122px; left: 7%; width: 46%; }
+  .eyebrow { color: #83a9cc; font: 600 8px/1.3 ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  .copy-block h1 { margin: 17px 0 18px; max-width: 540px; font-size: clamp(48px, 5.6vw, 76px); font-weight: 500; line-height: .91; letter-spacing: -.058em; }
+  .copy-block p { max-width: 465px; margin: 0; color: #98a3af; font-size: 14px; line-height: 1.6; }
+  .actions { display: flex; align-items: center; gap: 18px; margin-top: 25px; font-size: 11px; }
+  .button-primary { padding: 12px 17px; border-radius: 4px; color: #08101a; background: #83a9cc; font-weight: 700; }
+  .button-text { color: #98a3af; }
+  .canvas { position: absolute; z-index: 1; top: 58px; right: -2%; width: 68%; height: 470px; opacity: .92; }
+  .canvas .thread { fill: none; stroke: url(#flowGradient); stroke-width: 1; opacity: .48; }
+  .canvas .quiet { fill: none; stroke: #33404d; stroke-width: .75; opacity: .45; }
+  .canvas .pulse { fill: #a8c5e2; filter: drop-shadow(0 0 5px rgba(131,169,204,.8)); }
+  .canvas .signal { fill: #5b8def; opacity: .76; }
+  .scrim { position: absolute; z-index: 2; inset: 58px 38% 0 0; background: linear-gradient(90deg, #07090d 55%, transparent); pointer-events: none; }
+  .decision-core { position: absolute; z-index: 5; top: 210px; right: 21%; width: 174px; height: 174px; display: grid; place-items: center; border: 1px solid rgba(91,141,239,.32); border-radius: 50%; background: radial-gradient(circle, rgba(16,31,48,.96) 0 46%, rgba(13,22,33,.72) 47% 62%, transparent 63%); box-shadow: 0 0 70px rgba(91,141,239,.10); }
+  .decision-core::before, .decision-core::after { position: absolute; inset: 14px; border: 1px solid rgba(131,169,204,.16); border-radius: 50%; content: ''; }
+  .decision-core::after { inset: 35px; border-color: rgba(131,169,204,.28); }
+  .core-copy { position: relative; z-index: 2; text-align: center; }
+  .core-copy span { color: #83a9cc; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
+  .core-copy strong { display: block; margin: 8px 0 4px; font-size: 13px; font-weight: 600; }
+  .core-copy small { color: #74808d; font-size: 8px; }
+  .signal-chip { position: absolute; z-index: 5; min-width: 122px; padding: 10px 11px; border: 1px solid #26313d; border-radius: 4px; background: rgba(10,15,22,.92); box-shadow: 0 14px 34px rgba(0,0,0,.32); }
+  .signal-chip span { color: #83a9cc; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .11em; }
+  .signal-chip b { display: block; margin-top: 6px; font-size: 10px; font-weight: 600; }
+  .chip-one { top: 137px; right: 8%; }
+  .chip-two { top: 365px; right: 8%; border-left-color: #5b8def; }
+  .flow-rail { position: absolute; z-index: 8; right: 6%; bottom: 24px; left: 6%; height: 80px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #26313d; background: linear-gradient(180deg, rgba(7,9,13,.4), #07090d 34%); }
+  .flow-stage { position: relative; padding: 17px 22px 0; border-right: 1px solid #18202b; }
+  .flow-stage:last-child { border-right: 0; }
+  .flow-stage::before { position: absolute; top: -3px; left: 22px; width: 6px; height: 6px; border-radius: 50%; background: #5b8def; box-shadow: 0 0 0 5px rgba(91,141,239,.09); content: ''; }
+  .flow-stage span { color: #83a9cc; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
+  .flow-stage strong { display: block; margin-top: 8px; font-size: 11px; font-weight: 600; }
+  .flow-stage small { display: block; margin-top: 4px; color: #697582; font-size: 8px; }
+  .flow-stage.is-active { background: linear-gradient(180deg, rgba(18,32,48,.28), transparent); }
+  .flow-stage.is-active::before { background: #a8c5e2; }
+
+  .mobile-frame { width: 100%; max-width: 320px; margin: 0 auto; border: 1px solid #26313d; border-radius: 18px; overflow: hidden; background: #07090d; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
+  .mobile-screen { position: relative; min-height: 610px; overflow: hidden; color: #e8edf2; background: radial-gradient(circle at 72% 49%, rgba(55,91,136,.14), transparent 30%), #07090d; font-family: Inter, system-ui, sans-serif; }
+  .mobile-nav { height: 52px; padding: 0 16px; border-bottom: 1px solid #18202b; display: flex; align-items: center; justify-content: space-between; font-size: 8px; }
+  .mobile-menu { width: 29px; height: 29px; display: grid; place-items: center; border: 1px solid #26313d; color: #98a3af; }
+  .mobile-copy { position: relative; z-index: 5; padding: 48px 19px 0; }
+  .mobile-copy h2 { margin: 14px 0 16px; font-size: 43px; font-weight: 500; line-height: .93; letter-spacing: -.055em; }
+  .mobile-copy p { margin: 0; color: #98a3af; font-size: 12px; line-height: 1.55; }
+  .mobile-actions { margin-top: 20px; display: grid; gap: 12px; font-size: 10px; }
+  .mobile-actions .button-primary { text-align: center; }
+  .mobile-network { position: absolute; top: 250px; right: -55px; width: 325px; height: 260px; opacity: .7; }
+  .mobile-core { position: absolute; z-index: 3; top: 330px; right: 38px; width: 102px; height: 102px; display: grid; place-items: center; border: 1px solid rgba(91,141,239,.3); border-radius: 50%; background: rgba(12,22,34,.8); text-align: center; font: 600 7px/1.45 ui-monospace, monospace; color: #83a9cc; }
+  .mobile-rail { position: absolute; right: 16px; bottom: 18px; left: 16px; display: grid; gap: 7px; }
+  .mobile-stage { padding: 9px 11px; border-left: 2px solid #26313d; background: rgba(12,17,24,.78); color: #7a8693; font: 600 7px/1.35 ui-monospace, monospace; }
+  .mobile-stage.is-active { border-left-color: #83a9cc; color: #e8edf2; }
+  .notes { margin-top: 18px; padding: 18px; border: 1px solid #26313d; border-radius: 9px; background: #0c1118; }
+  .notes h3 { margin: 0 0 10px; }
+  .notes ul { margin: 0; padding-left: 18px; color: #98a3af; line-height: 1.6; }
+  .choice-bar { margin-top: 20px; padding: 17px 18px; border: 1px solid #33404d; border-radius: 9px; background: #101923; cursor: pointer; }
+  .choice-bar:hover, .choice-bar.selected { border-color: #83a9cc; }
+  .choice-bar h3 { margin: 0 0 5px; color: #e8edf2; }
+  .choice-bar p { margin: 0; color: #98a3af; }
+  @media (max-width: 980px) { .polish-grid { grid-template-columns: 1fr; } .mobile-frame { max-width: 360px; } }
+</style>
+
+<div class="review-intro">
+  <h2>Signal Constellation — polished</h2>
+  <p class="subtitle">The Aether field now behaves like Laminar’s decision system: distributed signals converge into a focused decision core, then resolve into a carried-forward action. The UI cards are reduced to two evidence chips so the hero stays editorial rather than dashboard-heavy.</p>
+</div>
+
+<div class="polish-grid">
+  <div class="preview-shell">
+    <div class="preview-label">DESKTOP / REFINED DIRECTION A</div>
+    <div class="desktop-hero">
+      <div class="laminar-nav"><div class="brand"><span class="brand-mark">Λ</span> LAMINAR <small>APEX</small></div><div class="nav-links"><span>Platform</span><span>Security</span><span>Company</span><b class="nav-cta">Request access ↗</b></div></div>
+      <svg class="canvas" viewBox="0 0 760 470" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="flowGradient" x1="0" x2="1"><stop offset="0" stop-color="#33404d"/><stop offset=".55" stop-color="#83a9cc"/><stop offset="1" stop-color="#5b8def"/></linearGradient></defs>
+        <path class="quiet" d="M32 70 L128 118 L224 48 L326 132 L454 72 L566 139 L715 67"/><path class="quiet" d="M72 310 L182 250 L290 356 L403 286 L548 348 L706 274"/><path class="quiet" d="M128 118 L182 250 M224 48 L326 132 M326 132 L403 286 M454 72 L566 139 M566 139 L548 348"/>
+        <path class="thread" d="M32 70 C170 98 205 142 330 215 C424 270 508 220 646 354"/><path class="thread" d="M72 310 C190 280 218 250 330 215 C447 178 520 156 715 67"/><path class="thread" d="M224 48 C268 112 287 165 330 215 C389 286 470 321 646 354"/>
+        <circle class="signal" cx="32" cy="70" r="2"/><circle class="signal" cx="72" cy="310" r="2"/><circle class="signal" cx="224" cy="48" r="2"/><circle class="signal" cx="128" cy="118" r="2.5"/><circle class="signal" cx="182" cy="250" r="2"/><circle class="pulse" cx="330" cy="215" r="4"/><circle class="signal" cx="454" cy="72" r="2"/><circle class="signal" cx="566" cy="139" r="2"/><circle class="pulse" cx="646" cy="354" r="3"/><circle class="signal" cx="715" cy="67" r="2"/><circle class="signal" cx="706" cy="274" r="2"/>
+      </svg>
+      <div class="scrim"></div>
+      <div class="copy-block"><div class="eyebrow">PORTFOLIO DECISIONS / CARRIED THROUGH</div><h1>Know what<br>needs you next.</h1><p>Apex connects portfolio signals, professional judgment, and next actions in one controlled decision flow.</p><div class="actions"><span class="button-primary">Request access →</span><span class="button-text">See the decision flow ↓</span></div></div>
+      <div class="decision-core"><div class="core-copy"><span>APEX / DECIDE</span><strong>Priority resolved</strong><small>23 checks complete</small></div></div>
+      <div class="signal-chip chip-one"><span>CONNECTED CONTEXT</span><b>148 households · 412 accounts</b></div>
+      <div class="signal-chip chip-two"><span>CARRY FORWARD</span><b>Rationale · approval · next action</b></div>
+      <div class="flow-rail"><div class="flow-stage"><span>01 / CONNECT</span><strong>Signals become context</strong><small>Identity · holdings · mandates · tax</small></div><div class="flow-stage is-active"><span>02 / DECIDE</span><strong>Context becomes priority</strong><small>Allocation · policy · professional judgment</small></div><div class="flow-stage"><span>03 / CARRY FORWARD</span><strong>Priority becomes action</strong><small>Rationale · approval · client-ready output</small></div></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-shell">
+      <div class="preview-label">MOBILE / SAME STORY, LESS DENSITY</div>
+      <div class="mobile-frame" style="border:0;border-radius:0;box-shadow:none">
+        <div class="mobile-screen">
+          <div class="mobile-nav"><div class="brand"><span class="brand-mark">Λ</span> LAMINAR</div><span class="mobile-menu">☰</span></div>
+          <div class="mobile-copy"><div class="eyebrow">PORTFOLIO DECISIONS / CARRIED THROUGH</div><h2>Know what needs you next.</h2><p>Apex connects portfolio signals, professional judgment, and next actions in one controlled decision flow.</p><div class="mobile-actions"><span class="button-primary">Request access →</span></div></div>
+          <svg class="mobile-network" viewBox="0 0 325 260"><path d="M10 45 L102 85 L158 34 L213 124 L300 66 M36 205 L112 156 L213 124 L290 220 M102 85 L112 156" fill="none" stroke="#536b86" stroke-width=".8"/><path d="M10 45 C92 80 127 118 213 124 C251 127 275 174 290 220" fill="none" stroke="#83a9cc" stroke-width="1"/><g fill="#83a9cc"><circle cx="10" cy="45" r="2"/><circle cx="102" cy="85" r="2"/><circle cx="158" cy="34" r="2"/><circle cx="213" cy="124" r="4"/><circle cx="300" cy="66" r="2"/><circle cx="36" cy="205" r="2"/><circle cx="290" cy="220" r="3"/></g></svg>
+          <div class="mobile-core">PRIORITY<br>RESOLVED</div>
+          <div class="mobile-rail"><div class="mobile-stage">01 / CONNECT — SIGNALS BECOME CONTEXT</div><div class="mobile-stage is-active">02 / DECIDE — CONTEXT BECOMES PRIORITY</div><div class="mobile-stage">03 / CARRY — PRIORITY BECOMES ACTION</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><h3>What changed</h3><ul><li>One decision core replaces three floating cards.</li><li>Persistent workflow rail explains the product immediately.</li><li>Blue/platinum Aether field matches Laminar’s system palette.</li><li>Mobile removes evidence chips but preserves all three stages.</li></ul></div>
+  </div>
+</div>
+
+<div class="choice-bar" data-choice="approve-signal-constellation-v2" onclick="toggleSelect(this)"><h3>Use this as the hero direction</h3><p>Click to approve, or describe one more polish pass in the terminal.</p></div>

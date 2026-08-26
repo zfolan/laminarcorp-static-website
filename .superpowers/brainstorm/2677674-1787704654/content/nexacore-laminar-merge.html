@@ -1,0 +1,112 @@
+<style>
+  .merge-intro { max-width: 920px; margin-bottom: 24px; }
+  .merge-intro h2 { margin-bottom: 8px; }
+  .site-preview { overflow: hidden; border: 1px solid #26313d; border-radius: 12px; background: #07090d; box-shadow: 0 30px 90px rgba(0,0,0,.3); color: #e8edf2; font-family: Inter, system-ui, sans-serif; }
+  .site-preview * { box-sizing: border-box; }
+  .merge-hero { position: relative; min-height: 720px; overflow: hidden; background: radial-gradient(ellipse at 50% 76%, rgba(44,77,112,.19), transparent 36%), #07090d; }
+  .floating-nav { position: absolute; z-index: 20; top: 24px; left: 50%; width: min(920px, calc(100% - 64px)); height: 54px; padding: 0 8px 0 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(83,101,121,.72); border-radius: 8px; background: rgba(12,17,24,.88); backdrop-filter: blur(18px); box-shadow: 0 16px 42px rgba(0,0,0,.28); transform: translateX(-50%); }
+  .merge-brand { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .16em; }
+  .merge-mark { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #5b8def; color: #83a9cc; font-size: 11px; }
+  .merge-brand small { color: #626e7b; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .14em; }
+  .merge-links { display: flex; align-items: center; gap: 25px; color: #98a3af; font-size: 10px; }
+  .merge-nav-cta { padding: 11px 15px; border-radius: 5px; color: #07101a; background: #83a9cc; font-weight: 700; }
+  .merge-copy { position: relative; z-index: 10; width: min(760px, calc(100% - 48px)); margin: 0 auto; padding-top: 178px; text-align: center; }
+  .merge-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #83a9cc; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
+  .merge-eyebrow::before { width: 5px; height: 5px; border-radius: 50%; background: #83a9cc; box-shadow: 0 0 0 5px rgba(131,169,204,.08); content: ''; }
+  .merge-copy h1 { margin: 18px 0 17px; font-size: clamp(58px, 6.8vw, 92px); font-weight: 500; line-height: .92; letter-spacing: -.06em; text-wrap: balance; }
+  .merge-copy p { max-width: 620px; margin: 0 auto; color: #98a3af; font-size: 15px; line-height: 1.58; }
+  .merge-actions { margin-top: 26px; display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 11px; }
+  .merge-primary { padding: 13px 18px; border-radius: 5px; color: #08101a; background: #83a9cc; font-weight: 700; box-shadow: 0 10px 30px rgba(91,141,239,.16); }
+  .merge-secondary { color: #98a3af; }
+  .perspective-field { position: absolute; z-index: 1; right: 0; bottom: -20px; left: 0; width: 100%; height: 440px; }
+  .perspective-field .quiet { fill: none; stroke: #26394d; stroke-width: .75; opacity: .46; }
+  .perspective-field .flow { fill: none; stroke: url(#laminarFlow); stroke-width: 1.1; opacity: .68; }
+  .perspective-field .ray { fill: url(#rayFade); opacity: .13; }
+  .perspective-field circle { fill: #83a9cc; filter: drop-shadow(0 0 4px rgba(131,169,204,.65)); }
+  .decision-orbit { position: absolute; z-index: 5; bottom: 94px; left: 50%; width: 126px; height: 126px; display: grid; place-items: center; border: 1px solid rgba(91,141,239,.32); border-radius: 50%; background: radial-gradient(circle, rgba(14,29,44,.92) 0 40%, rgba(10,18,28,.68) 41% 63%, transparent 64%); box-shadow: 0 0 80px rgba(91,141,239,.10); transform: translateX(-50%); }
+  .decision-orbit::before { position: absolute; inset: 18px; border: 1px solid rgba(131,169,204,.24); border-radius: 50%; content: ''; }
+  .orbit-copy { position: relative; z-index: 2; text-align: center; color: #83a9cc; font: 600 7px/1.4 ui-monospace, monospace; letter-spacing: .1em; }
+  .orbit-copy b { display: block; margin-top: 5px; color: #e8edf2; font: 600 10px/1.2 Inter, sans-serif; letter-spacing: 0; }
+  .hero-stage-labels { position: absolute; z-index: 7; right: 6%; bottom: 37px; left: 6%; display: grid; grid-template-columns: repeat(3, 1fr); color: #697582; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
+  .hero-stage-labels span:nth-child(2) { color: #83a9cc; text-align: center; }
+  .hero-stage-labels span:last-child { text-align: right; }
+  .scroll-indicator { position: absolute; z-index: 8; right: 26px; bottom: 24px; color: #4f5b67; font: 600 6px/1 ui-monospace, monospace; letter-spacing: .12em; writing-mode: vertical-rl; }
+
+  .workflow-proof { position: relative; min-height: 780px; padding: 105px 6% 78px; overflow: hidden; border-top: 1px solid #18202b; background: linear-gradient(180deg, #090d13, #07090d 62%); }
+  .proof-header { position: relative; z-index: 5; display: grid; grid-template-columns: 1fr .68fr; gap: 80px; align-items: end; }
+  .proof-header h2 { max-width: 690px; margin: 16px 0 0; font-size: clamp(45px, 5vw, 68px); font-weight: 500; line-height: .98; letter-spacing: -.052em; }
+  .proof-header p { max-width: 420px; margin: 0; color: #98a3af; font-size: 14px; line-height: 1.6; }
+  .proof-cards { position: relative; z-index: 6; margin-top: 70px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .proof-card { position: relative; min-height: 270px; padding: 19px; overflow: hidden; border: 1px solid #26313d; border-radius: 7px; background: linear-gradient(180deg, rgba(16,25,36,.95), rgba(10,15,22,.96)); box-shadow: 0 26px 55px rgba(0,0,0,.24); }
+  .proof-card::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; background: linear-gradient(90deg, transparent, #5b8def, transparent); opacity: .45; content: ''; }
+  .proof-card.is-core { translate: 0 -18px; border-color: #3a536f; background: linear-gradient(180deg, #121e2c, #0b1119); }
+  .proof-topline { display: flex; align-items: center; justify-content: space-between; color: #83a9cc; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .12em; }
+  .proof-number { color: #4f5b67; }
+  .proof-card h3 { margin: 45px 0 11px; font-size: 24px; font-weight: 500; letter-spacing: -.03em; }
+  .proof-card > p { margin: 0; color: #98a3af; font-size: 12px; line-height: 1.55; }
+  .proof-evidence { position: absolute; right: 18px; bottom: 18px; left: 18px; padding-top: 13px; border-top: 1px solid #18202b; display: flex; flex-wrap: wrap; gap: 7px; }
+  .proof-evidence span { padding: 5px 7px; border: 1px solid #26313d; border-radius: 3px; color: #778390; font: 600 7px/1 ui-monospace, monospace; }
+  .proof-evidence span.is-active { color: #a8c5e2; border-color: #3a536f; background: rgba(34,57,82,.3); }
+  .proof-flow { position: absolute; z-index: 1; right: -5%; bottom: 0; left: -5%; width: 110%; height: 350px; opacity: .48; }
+  .proof-flow path { fill: none; stroke: #334b66; stroke-width: .8; }
+  .proof-flow .active { stroke: #83a9cc; stroke-width: 1.15; }
+  .proof-footer { position: relative; z-index: 5; margin-top: 55px; display: flex; justify-content: space-between; color: #586572; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
+
+  .merge-notes { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .merge-note { padding: 16px; border: 1px solid #26313d; border-radius: 8px; background: #0c1118; }
+  .merge-note span { color: #83a9cc; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .1em; }
+  .merge-note h3 { margin: 9px 0 6px; color: #e8edf2; font-size: 15px; }
+  .merge-note p { margin: 0; color: #98a3af; font-size: 12px; line-height: 1.5; }
+  .approve-merge { margin-top: 18px; padding: 18px 20px; border: 1px solid #33404d; border-radius: 9px; background: #101923; cursor: pointer; }
+  .approve-merge:hover, .approve-merge.selected { border-color: #83a9cc; box-shadow: 0 0 0 1px #83a9cc; }
+  .approve-merge h3 { margin: 0 0 5px; color: #e8edf2; }
+  .approve-merge p { margin: 0; color: #98a3af; }
+  @media (max-width: 850px) {
+    .floating-nav { width: calc(100% - 24px); top: 12px; }
+    .merge-links span { display: none; }
+    .merge-copy { padding-top: 145px; }
+    .merge-copy h1 { font-size: 58px; }
+    .proof-header { grid-template-columns: 1fr; gap: 22px; }
+    .proof-cards { grid-template-columns: 1fr; }
+    .proof-card.is-core { translate: 0; }
+    .workflow-proof { padding-top: 75px; }
+    .merge-notes { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="merge-intro">
+  <h2>Nexacore composition × Laminar decision flow</h2>
+  <p class="subtitle">This keeps Nexacore’s centered cinematic hierarchy, floating navigation, and horizon depth—but replaces its decorative rays with a functional Aether field. The field continues directly into Laminar’s first workflow proof section.</p>
+</div>
+
+<div class="site-preview">
+  <section class="merge-hero">
+    <div class="floating-nav"><div class="merge-brand"><span class="merge-mark">Λ</span> LAMINAR <small>APEX</small></div><div class="merge-links"><span>Platform</span><span>Security</span><span>Company</span><b class="merge-nav-cta">Request access ↗</b></div></div>
+    <div class="merge-copy"><div class="merge-eyebrow">PORTFOLIO DECISIONS / CARRIED THROUGH</div><h1>Know what needs you next.</h1><p>Apex connects portfolio signals, professional judgment, and next actions in one controlled decision flow.</p><div class="merge-actions"><span class="merge-primary">Request access →</span><span class="merge-secondary">See the decision flow ↓</span></div></div>
+    <svg class="perspective-field" viewBox="0 0 1200 440" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="laminarFlow" x1="0" x2="1"><stop offset="0" stop-color="#26313d"/><stop offset=".5" stop-color="#83a9cc"/><stop offset="1" stop-color="#26313d"/></linearGradient><linearGradient id="rayFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8def" stop-opacity="0"/><stop offset="1" stop-color="#5b8def" stop-opacity=".42"/></linearGradient></defs>
+      <path class="ray" d="M600 168 L90 440 L340 440 Z"/><path class="ray" d="M600 168 L420 440 L545 440 Z"/><path class="ray" d="M600 168 L660 440 L780 440 Z"/><path class="ray" d="M600 168 L855 440 L1115 440 Z"/>
+      <path class="quiet" d="M45 80 L210 128 L370 70 L505 168 L600 168 L722 96 L886 152 L1145 66"/><path class="quiet" d="M52 336 L246 278 L420 354 L505 168 L600 168 L760 302 L968 360 L1158 286"/><path class="quiet" d="M210 128 L246 278 M370 70 L505 168 M722 96 L760 302 M886 152 L968 360"/>
+      <path class="flow" d="M45 80 C242 120 370 123 505 168 C560 186 576 175 600 168 C750 124 927 120 1145 66"/><path class="flow" d="M52 336 C256 310 405 251 505 168 C550 132 580 150 600 168 C718 274 888 331 1158 286"/><path class="flow" d="M370 70 C449 104 474 144 505 168 C544 199 572 187 600 168 C651 133 684 112 722 96"/>
+      <circle cx="45" cy="80" r="2"/><circle cx="52" cy="336" r="2"/><circle cx="210" cy="128" r="2"/><circle cx="246" cy="278" r="2"/><circle cx="370" cy="70" r="2"/><circle cx="505" cy="168" r="3"/><circle cx="600" cy="168" r="4"/><circle cx="722" cy="96" r="2"/><circle cx="760" cy="302" r="2"/><circle cx="886" cy="152" r="2"/><circle cx="968" cy="360" r="2"/><circle cx="1145" cy="66" r="2"/><circle cx="1158" cy="286" r="2"/>
+    </svg>
+    <div class="decision-orbit"><div class="orbit-copy">APEX / DECIDE<b>Priority resolved</b>23 checks complete</div></div>
+    <div class="hero-stage-labels"><span>01 / CONNECT</span><span>02 / DECIDE</span><span>03 / CARRY FORWARD</span></div>
+    <div class="scroll-indicator">SCROLL TO FOLLOW THE DECISION</div>
+  </section>
+
+  <section class="workflow-proof">
+    <div class="proof-header"><div><div class="merge-eyebrow">ONE CONNECTED DECISION SYSTEM</div><h2>From scattered signals to client-ready action.</h2></div><p>The Aether field continues below the fold as a readable product story. Each stage explains what moves forward—and what professional context stays attached.</p></div>
+    <div class="proof-cards">
+      <article class="proof-card"><div class="proof-topline"><span>CONNECT</span><span class="proof-number">01</span></div><h3>Signals become context.</h3><p>Households, accounts, mandates, tax context, policy rules, and market movement arrive as one reviewable thread.</p><div class="proof-evidence"><span>148 HOUSEHOLDS</span><span>412 ACCOUNTS</span><span>23 RULES</span></div></article>
+      <article class="proof-card is-core"><div class="proof-topline"><span>DECIDE</span><span class="proof-number">02</span></div><h3>Context becomes priority.</h3><p>Allocation, policy checks, and professional judgment resolve around the work that needs attention now.</p><div class="proof-evidence"><span class="is-active">CASH DRIFT</span><span>$248K IMPACT</span><span>REVIEW</span></div></article>
+      <article class="proof-card"><div class="proof-topline"><span>CARRY FORWARD</span><span class="proof-number">03</span></div><h3>Priority becomes action.</h3><p>Rationale, approvals, and decision history stay connected as the work moves toward a client-ready next step.</p><div class="proof-evidence"><span>RATIONALE</span><span>APPROVAL</span><span>CLIENT-READY</span></div></article>
+    </div>
+    <svg class="proof-flow" viewBox="0 0 1200 350" preserveAspectRatio="none" aria-hidden="true"><path d="M0 260 C240 190 320 320 520 235 C710 154 830 285 1200 165"/><path class="active" d="M0 305 C255 210 402 271 600 190 C786 114 946 235 1200 118"/><path d="M0 170 C251 280 401 171 610 254 C829 342 975 172 1200 262"/></svg>
+    <div class="proof-footer"><span>CONTEXT PRESERVED AT EVERY STAGE</span><span>PROFESSIONAL JUDGMENT REMAINS IN CONTROL</span></div>
+  </section>
+</div>
+
+<div class="merge-notes"><div class="merge-note"><span>NEXACORE DNA</span><h3>Cinematic center of gravity</h3><p>Floating capsule navigation, centered promise, deep horizon, and a strong transition into the next section.</p></div><div class="merge-note"><span>LAMINAR DNA</span><h3>Exact product meaning</h3><p>Instrument-like typography, system blue, portfolio evidence, restrained borders, and professional judgment.</p></div><div class="merge-note"><span>AETHER ROLE</span><h3>Explanatory—not decorative</h3><p>Signals converge into the decision core, then continue as the visual thread through the workflow proof.</p></div></div>
+
+<div class="approve-merge" data-choice="approve-nexacore-laminar-merge" onclick="toggleSelect(this)"><h3>Approve this merged direction</h3><p>Click to approve the hero + workflow composition, or describe the next refinement in the terminal.</p></div>

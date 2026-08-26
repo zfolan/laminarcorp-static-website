@@ -1,0 +1,132 @@
+<style>
+  .hero-intro { max-width: 920px; margin-bottom: 28px; }
+  .hero-intro h2 { margin-bottom: 8px; }
+  .hero-intro p { max-width: 760px; }
+  .direction-grid { display: grid; gap: 24px; }
+  .direction-card { border: 1px solid #26313d; border-radius: 10px; overflow: hidden; background: #0a0d13; cursor: pointer; transition: border-color .2s ease, transform .2s ease; }
+  .direction-card:hover { border-color: #83a9cc; transform: translateY(-2px); }
+  .direction-card.selected { border-color: #83a9cc; box-shadow: 0 0 0 1px #83a9cc; }
+  .concept { position: relative; min-height: 490px; overflow: hidden; color: #e8edf2; background: #07090d; font-family: Inter, system-ui, sans-serif; }
+  .concept * { box-sizing: border-box; }
+  .concept-nav { position: relative; z-index: 5; height: 52px; padding: 0 24px; border-bottom: 1px solid #18202b; display: flex; align-items: center; justify-content: space-between; color: #98a3af; font-size: 9px; letter-spacing: .04em; }
+  .concept-brand { display: flex; align-items: center; gap: 9px; color: #e8edf2; font-weight: 700; letter-spacing: .16em; }
+  .concept-mark { width: 22px; height: 22px; border: 1px solid #5b8def; display: grid; place-items: center; color: #83a9cc; font-size: 10px; }
+  .concept-links { display: flex; align-items: center; gap: 20px; }
+  .concept-cta { padding: 8px 12px; border-radius: 4px; background: #83a9cc; color: #07101a; font-weight: 700; }
+  .eyebrow { color: #83a9cc; font: 600 8px/1.2 ui-monospace, monospace; letter-spacing: .15em; text-transform: uppercase; }
+  .hero-title { margin: 14px 0 16px; color: #e8edf2; font-size: 45px; font-weight: 500; line-height: .94; letter-spacing: -.055em; }
+  .hero-copy { color: #98a3af; font-size: 13px; line-height: 1.55; }
+  .hero-buttons { display: flex; align-items: center; gap: 16px; margin-top: 22px; font-size: 10px; }
+  .primary-button { padding: 11px 15px; border-radius: 4px; color: #07101a; background: #83a9cc; font-weight: 700; }
+  .text-button { color: #98a3af; }
+  .network { position: absolute; inset: 52px 0 0; width: 100%; height: calc(100% - 52px); opacity: .74; }
+  .network line { stroke: #6f80a8; stroke-width: .8; opacity: .48; }
+  .network circle { fill: #8aaeff; }
+  .node { position: absolute; z-index: 3; border: 1px solid #2d4055; border-radius: 4px; background: rgba(10, 15, 22, .88); box-shadow: 0 18px 50px rgba(0,0,0,.34); }
+  .node-label { color: #83a9cc; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .12em; }
+  .node strong { display: block; margin-top: 7px; font-size: 11px; font-weight: 600; }
+  .node small { display: block; margin-top: 5px; color: #7d8996; font-size: 8px; line-height: 1.35; }
+  .concept-footer { position: absolute; z-index: 4; right: 24px; bottom: 18px; left: 24px; display: flex; align-items: center; justify-content: space-between; color: #626e7b; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .12em; }
+  .direction-meta { padding: 18px 20px 20px; background: #0c1118; }
+  .direction-meta h3 { margin: 0 0 7px; color: #e8edf2; }
+  .direction-meta p { margin: 0; color: #98a3af; line-height: 1.5; }
+  .tradeoffs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .tradeoffs span { padding: 5px 8px; border: 1px solid #26313d; border-radius: 99px; color: #83a9cc; font: 600 9px/1 ui-monospace, monospace; }
+
+  .constellation-copy { position: absolute; z-index: 4; top: 105px; left: 7%; width: 44%; }
+  .constellation .network { left: 38%; width: 62%; }
+  .constellation .stage-connect { top: 112px; right: 28%; width: 132px; padding: 12px; }
+  .constellation .stage-decide { top: 228px; right: 8%; width: 160px; padding: 13px; border-color: #5b8def; background: rgba(14, 25, 38, .94); }
+  .constellation .stage-carry { right: 30%; bottom: 58px; width: 145px; padding: 12px; }
+  .constellation .active-packet { position: absolute; z-index: 4; right: 32px; bottom: 88px; width: 205px; padding: 10px 12px; border-left: 2px solid #5b8def; color: #98a3af; background: rgba(12, 17, 24, .92); font: 8px/1.45 ui-monospace, monospace; }
+  .constellation .active-packet b { color: #e8edf2; }
+
+  .horizon-copy { position: absolute; z-index: 4; top: 86px; right: 15%; left: 15%; text-align: center; }
+  .horizon-copy .hero-title { max-width: 650px; margin-inline: auto; font-size: 49px; }
+  .horizon-copy .hero-copy { max-width: 510px; margin-inline: auto; }
+  .horizon .network { opacity: .45; }
+  .horizon-flow { position: absolute; z-index: 4; right: 6%; bottom: 58px; left: 6%; height: 86px; display: grid; grid-template-columns: 1fr 54px 1fr 54px 1fr; align-items: center; }
+  .horizon-stage { height: 66px; padding: 12px 14px; border: 1px solid #26313d; background: rgba(10, 15, 22, .91); }
+  .horizon-stage.is-core { border-color: #5b8def; box-shadow: inset 0 2px 0 #5b8def; }
+  .horizon-stage b { display: block; margin-top: 7px; font-size: 10px; }
+  .horizon-stage small { color: #788493; font-size: 7px; }
+  .horizon-arrow { height: 1px; background: linear-gradient(90deg, #26313d, #83a9cc, #26313d); }
+
+  .lens-copy { position: absolute; z-index: 4; top: 90px; left: 6%; width: 39%; }
+  .lens-copy .hero-title { font-size: 42px; }
+  .lens .network { left: 28%; width: 72%; opacity: .5; }
+  .lens-panel { position: absolute; z-index: 4; top: 106px; right: 5%; width: 43%; min-height: 275px; border: 1px solid #26313d; background: rgba(10, 15, 22, .94); box-shadow: 0 24px 60px rgba(0,0,0,.42); }
+  .lens-panel__bar { height: 36px; padding: 0 12px; border-bottom: 1px solid #18202b; display: flex; align-items: center; justify-content: space-between; color: #626e7b; font: 7px/1 ui-monospace, monospace; }
+  .lens-panel__body { display: grid; grid-template-columns: 85px 1fr; min-height: 238px; }
+  .lens-rail { padding: 14px 10px; border-right: 1px solid #18202b; display: flex; flex-direction: column; gap: 9px; }
+  .lens-step { padding: 9px 7px; color: #626e7b; font: 7px/1.3 ui-monospace, monospace; }
+  .lens-step.is-active { color: #e8edf2; border-left: 2px solid #5b8def; background: #111923; }
+  .lens-decision { padding: 20px; }
+  .lens-decision h4 { margin: 8px 0 14px; font-size: 18px; font-weight: 500; }
+  .signal-row { margin-top: 7px; padding: 9px 10px; display: flex; justify-content: space-between; border: 1px solid #18202b; color: #98a3af; font-size: 8px; }
+  .signal-row.is-hot { border-color: #334b66; background: #101a27; }
+  .signal-row b { color: #e8edf2; }
+  .lens-outcome { margin-top: 15px; color: #83a9cc; font: 7px/1.4 ui-monospace, monospace; }
+
+  @media (max-width: 760px) {
+    .concept { min-height: 560px; }
+    .concept-links span { display: none; }
+    .hero-title { font-size: 37px !important; }
+    .constellation-copy, .horizon-copy, .lens-copy { top: 84px; right: 24px; left: 24px; width: auto; text-align: left; }
+    .constellation .network, .lens .network { top: 230px; left: 0; width: 100%; }
+    .constellation .stage-connect { top: 300px; left: 22px; right: auto; }
+    .constellation .stage-decide { top: 380px; right: 22px; }
+    .constellation .stage-carry { right: auto; bottom: 45px; left: 34%; }
+    .constellation .active-packet, .lens-panel { display: none; }
+    .horizon-flow { grid-template-columns: 1fr; gap: 5px; height: auto; bottom: 30px; }
+    .horizon-arrow { display: none; }
+    .horizon-stage { height: 45px; padding: 8px 10px; }
+    .lens-panel { top: 300px; right: 22px; left: 22px; width: auto; }
+  }
+</style>
+
+<div class="hero-intro">
+  <h2>Three directions for the new Laminar hero</h2>
+  <p class="subtitle">All three keep “Know what needs you next,” preserve Laminar’s dark editorial system, and use the Aether engine as meaningful decision-flow infrastructure—not purple decoration. Click the direction that best balances clarity and impact.</p>
+</div>
+
+<div class="direction-grid cards">
+  <div class="direction-card card" data-choice="signal-constellation" onclick="toggleSelect(this)">
+    <div class="concept constellation">
+      <div class="concept-nav"><div class="concept-brand"><span class="concept-mark">Λ</span> LAMINAR <small>APEX</small></div><div class="concept-links"><span>Platform</span><span>Security</span><span>Company</span><b class="concept-cta">Request access ↗</b></div></div>
+      <svg class="network" viewBox="0 0 640 438" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="52" y1="76" x2="176" y2="126"/><line x1="176" y1="126" x2="260" y2="62"/><line x1="176" y1="126" x2="302" y2="201"/><line x1="260" y1="62" x2="405" y2="104"/><line x1="302" y1="201" x2="405" y2="104"/><line x1="302" y1="201" x2="482" y2="229"/><line x1="405" y1="104" x2="554" y2="64"/><line x1="482" y1="229" x2="588" y2="166"/><line x1="302" y1="201" x2="387" y2="331"/><line x1="387" y1="331" x2="527" y2="362"/><line x1="482" y1="229" x2="527" y2="362"/>
+        <circle cx="52" cy="76" r="2"/><circle cx="176" cy="126" r="3"/><circle cx="260" cy="62" r="2"/><circle cx="302" cy="201" r="3"/><circle cx="405" cy="104" r="2"/><circle cx="482" cy="229" r="3"/><circle cx="554" cy="64" r="2"/><circle cx="588" cy="166" r="2"/><circle cx="387" cy="331" r="2"/><circle cx="527" cy="362" r="3"/>
+      </svg>
+      <div class="constellation-copy"><div class="eyebrow">PORTFOLIO DECISIONS / CARRIED THROUGH</div><div class="hero-title">Know what<br>needs you next.</div><div class="hero-copy">Apex connects portfolio signals, professional judgment, and next actions in one controlled decision flow.</div><div class="hero-buttons"><span class="primary-button">Request access →</span><span class="text-button">See the decision flow ↓</span></div></div>
+      <div class="node stage-connect"><span class="node-label">01 / CONNECT</span><strong>Context converges</strong><small>Households · holdings · mandate · tax</small></div>
+      <div class="node stage-decide"><span class="node-label">02 / DECIDE</span><strong>Attention resolves</strong><small>Priority · allocation · policy checks</small></div>
+      <div class="node stage-carry"><span class="node-label">03 / CARRY FORWARD</span><strong>Action keeps context</strong><small>Rationale · approval · client-ready</small></div>
+      <div class="active-packet"><b>NORTHBRIDGE HOUSEHOLD</b><br>CASH DRIFT · $248K · REVIEW</div>
+      <div class="concept-footer"><span>AMBIENT SIGNAL CONSTELLATION</span><span>POINTER-RESPONSIVE / REDUCED-MOTION SAFE</span></div>
+    </div>
+    <div class="direction-meta"><h3>A — Signal Constellation <span style="color:#83a9cc;font-size:12px">Recommended</span></h3><p>The network itself carries the story: distributed inputs converge on a decision, then branch into a reviewable action. Strongest blend of brand drama and immediate workflow clarity.</p><div class="tradeoffs"><span>Best narrative balance</span><span>Moderate information density</span><span>Mobile simplifies to 3 nodes</span></div></div>
+  </div>
+
+  <div class="direction-card card" data-choice="decision-horizon" onclick="toggleSelect(this)">
+    <div class="concept horizon">
+      <div class="concept-nav"><div class="concept-brand"><span class="concept-mark">Λ</span> LAMINAR <small>APEX</small></div><div class="concept-links"><span>Platform</span><span>Security</span><span>Company</span><b class="concept-cta">Request access ↗</b></div></div>
+      <svg class="network" viewBox="0 0 900 438" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="80" x2="210" y2="170"/><line x1="210" y1="170" x2="450" y2="120"/><line x1="450" y1="120" x2="690" y2="175"/><line x1="690" y1="175" x2="850" y2="85"/><line x1="110" y1="320" x2="450" y2="250"/><line x1="450" y1="250" x2="790" y2="330"/><circle cx="50" cy="80" r="2"/><circle cx="210" cy="170" r="2"/><circle cx="450" cy="120" r="3"/><circle cx="690" cy="175" r="2"/><circle cx="850" cy="85" r="2"/></svg>
+      <div class="horizon-copy"><div class="eyebrow">ONE CONTROLLED PATH FROM SIGNAL TO ACTION</div><div class="hero-title">Know what needs you next.</div><div class="hero-copy">Portfolio context becomes a prioritized, reviewable decision—and carries its rationale into the client conversation.</div><div class="hero-buttons" style="justify-content:center"><span class="primary-button">Request access →</span><span class="text-button">Explore the platform ↓</span></div></div>
+      <div class="horizon-flow"><div class="horizon-stage"><span class="node-label">01 / CONNECT</span><b>Signals become context</b><small>Identity · holdings · rules</small></div><i class="horizon-arrow"></i><div class="horizon-stage is-core"><span class="node-label">02 / DECIDE</span><b>Context becomes priority</b><small>Review · judgment · approval</small></div><i class="horizon-arrow"></i><div class="horizon-stage"><span class="node-label">03 / CARRY FORWARD</span><b>Priority becomes action</b><small>Proposal · rationale · history</small></div></div>
+      <div class="concept-footer"><span>DECISION HORIZON</span><span>ALL THREE STAGES ALWAYS VISIBLE</span></div>
+    </div>
+    <div class="direction-meta"><h3>B — Decision Horizon</h3><p>An editorial, centered promise with a clear three-stage rail. Fastest to understand and easiest to scan, but the Aether effect becomes atmosphere rather than the main explanatory device.</p><div class="tradeoffs"><span>Highest readability</span><span>Lowest interaction complexity</span><span>Less cinematic</span></div></div>
+  </div>
+
+  <div class="direction-card card" data-choice="priority-lens" onclick="toggleSelect(this)">
+    <div class="concept lens">
+      <div class="concept-nav"><div class="concept-brand"><span class="concept-mark">Λ</span> LAMINAR <small>APEX</small></div><div class="concept-links"><span>Platform</span><span>Security</span><span>Company</span><b class="concept-cta">Request access ↗</b></div></div>
+      <svg class="network" viewBox="0 0 700 438" preserveAspectRatio="none" aria-hidden="true"><line x1="30" y1="70" x2="190" y2="140"/><line x1="190" y1="140" x2="360" y2="95"/><line x1="360" y1="95" x2="510" y2="180"/><line x1="510" y1="180" x2="650" y2="110"/><line x1="190" y1="140" x2="310" y2="310"/><line x1="310" y1="310" x2="550" y2="340"/><circle cx="30" cy="70" r="2"/><circle cx="190" cy="140" r="3"/><circle cx="360" cy="95" r="2"/><circle cx="510" cy="180" r="3"/><circle cx="650" cy="110" r="2"/><circle cx="310" cy="310" r="2"/><circle cx="550" cy="340" r="2"/></svg>
+      <div class="lens-copy"><div class="eyebrow">TODAY / DECISION QUEUE</div><div class="hero-title">Know what<br>needs you next.</div><div class="hero-copy">A focused operating view for portfolio work that requires professional judgment.</div><div class="hero-buttons"><span class="primary-button">Request access →</span></div></div>
+      <div class="lens-panel"><div class="lens-panel__bar"><span>APEX / PRIORITY LENS</span><span>03 NEED REVIEW</span></div><div class="lens-panel__body"><div class="lens-rail"><div class="lens-step">01<br>CONNECT</div><div class="lens-step is-active">02<br>DECIDE</div><div class="lens-step">03<br>CARRY</div></div><div class="lens-decision"><span class="node-label">SELECTED PRIORITY</span><h4>Northbridge Household</h4><div class="signal-row is-hot"><span>Cash drift</span><b>$248K</b></div><div class="signal-row"><span>Policy checks</span><b>23 / 23</b></div><div class="signal-row"><span>Decision state</span><b>REVIEW</b></div><div class="lens-outcome">CONTEXT CONNECTED → PROFESSIONAL REVIEW REQUIRED</div></div></div></div>
+      <div class="concept-footer"><span>PRIORITY LENS</span><span>PRODUCT PROOF ABOVE THE FOLD</span></div>
+    </div>
+    <div class="direction-meta"><h3>C — Priority Lens</h3><p>A compact product decision surface sits inside the particle field. Most concrete and credible for sophisticated buyers, but denser and closer to the current dashboard-led hero.</p><div class="tradeoffs"><span>Strongest product proof</span><span>Highest information density</span><span>Closest to current composition</span></div></div>
+  </div>
+</div>

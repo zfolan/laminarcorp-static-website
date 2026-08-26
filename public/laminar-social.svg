@@ -4,7 +4,7 @@
   <path d="M90 170h116M90 242h190M90 314h264M206 170l148 144M280 242l74 72" stroke="#5487b6" stroke-width="4" opacity=".8"/>
   <circle cx="354" cy="314" r="7" fill="#76a6cf"/>
   <text x="420" y="230" fill="#76a6cf" font-family="monospace" font-size="21" letter-spacing="4">LAMINAR</text>
-  <text x="420" y="310" fill="#e8edf2" font-family="Arial, sans-serif" font-size="49" font-weight="500">Portfolio strategy, carried</text>
-  <text x="420" y="370" fill="#e8edf2" font-family="Arial, sans-serif" font-size="49" font-weight="500">through to implementation.</text>
-  <text x="420" y="430" fill="#98a3af" font-family="Arial, sans-serif" font-size="22">One household. One portfolio. One connected system.</text>
+  <text x="420" y="310" fill="#e8edf2" font-family="Arial, sans-serif" font-size="55" font-weight="500">Know what needs</text>
+  <text x="420" y="376" fill="#e8edf2" font-family="Arial, sans-serif" font-size="55" font-weight="500">you next.</text>
+  <text x="420" y="438" fill="#98a3af" font-family="Arial, sans-serif" font-size="21">Connected portfolio context, carried through.</text>
 </svg>

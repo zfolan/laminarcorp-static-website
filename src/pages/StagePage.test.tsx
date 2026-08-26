@@ -16,12 +16,12 @@ const renderStage = () => render(
 describe('StagePage', () => {
   it('shows the aether hero without expanding a product panel', () => {
     renderStage()
-    expect(screen.getByText('LAMINAR')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'LAMINAR' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /laminar/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Request access' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Households' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Rebalance' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Analytics' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Households' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Rebalance' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Analytics' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /close .* preview/i })).not.toBeInTheDocument()
     expect(document.getElementById('households')).toBeInTheDocument()
     expect(document.getElementById('rebalance')).toBeInTheDocument()
@@ -34,13 +34,11 @@ describe('StagePage', () => {
     expect(field).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('scrolls to a product section instead of expanding a panel', async () => {
-    const user = userEvent.setup()
-    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
+  it('keeps product sections in the page without hero shortcuts', () => {
     renderStage()
-    await user.click(screen.getByRole('button', { name: 'Households' }))
-    expect(scrollSpy).toHaveBeenCalled()
     expect(document.getElementById('households')).toContainElement(screen.getByText(STAGE_CAPTIONS.households))
+    expect(document.getElementById('rebalance')).toContainElement(screen.getByText(STAGE_CAPTIONS.rebalance))
+    expect(document.getElementById('analytics')).toContainElement(screen.getByText(STAGE_CAPTIONS.analytics))
   })
 
   it('renders the household library in the page', () => {

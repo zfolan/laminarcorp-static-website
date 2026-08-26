@@ -10,7 +10,7 @@ const renderAt = (path: string) => {
 describe('public routes', () => {
   it('renders the stage at / with no request-access route', () => {
     renderAt('/')
-    expect(screen.getByRole('button', { name: 'Households' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'LAMINAR' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Platform' })).not.toBeInTheDocument()
   })
 

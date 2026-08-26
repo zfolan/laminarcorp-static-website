@@ -450,13 +450,35 @@ button { color: inherit; }
 .stage-hero {
   position: relative;
   z-index: 1;
+  display: grid;
+  place-items: center;
   min-height: 100svh;
+  padding: 12vh 6vw 10vh;
 }
-.stage-nodes {
-  position: absolute;
-  z-index: 5;
-  inset: 0;
-  pointer-events: none;
+.hero-mark {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(28px, 5vh, 56px);
+  width: min(980px, 88vw);
+}
+.hero-logo {
+  width: min(520px, 62vw);
+  height: auto;
+  overflow: visible;
+}
+.hero-logo path { fill: transparent; }
+.hero-mark--still .hero-logo path:nth-child(-n+2) { fill: #2f3947; }
+.hero-mark--still .hero-logo path:nth-child(n+3) { fill: #5487b6; }
+.hero-title {
+  margin: 0;
+  color: var(--platinum);
+  font-size: clamp(52px, 13vw, 168px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 0.9;
+  text-align: center;
 }
 .stage-node {
   pointer-events: auto;
@@ -496,9 +518,6 @@ button { color: inherit; }
   text-transform: uppercase;
   text-shadow: 0 0 16px rgba(131, 169, 204, 0.7);
 }
-.stage-node--households { top: 38%; left: 12%; animation: aether-drift 9s ease-in-out infinite; }
-.stage-node--rebalance { top: 28%; right: 14%; animation: aether-drift 11s ease-in-out infinite 1.2s; }
-.stage-node--analytics { bottom: 22%; left: 42%; animation: aether-drift 10s ease-in-out infinite 0.6s; }
 .stage-node:hover .stage-node__core {
   box-shadow: 0 0 0 6px rgba(91, 141, 239, 0.16), 0 0 22px 6px rgba(91, 141, 239, 0.7);
 }
@@ -507,15 +526,6 @@ button { color: inherit; }
 }
 .stage-node:focus-visible .stage-node__core {
   box-shadow: 0 0 0 2px var(--blue-bright), 0 0 16px 4px rgba(91, 141, 239, 0.8);
-}
-@keyframes aether-drift {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(6px, -8px, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .stage-node--households,
-  .stage-node--rebalance,
-  .stage-node--analytics { animation: none; }
 }
 .stage-section {
   position: relative;
@@ -2019,8 +2029,7 @@ button { color: inherit; }
   cursor: pointer;
 }
 @media (max-width: 767px) {
-  .stage-nodes { inset: auto 12px 18px; display: flex; gap: 4px; }
-  .stage-node { position: static; flex: 1; justify-content: center; min-width: 0; }
-  .stage-node__label { letter-spacing: 0.08em; font-size: 10px; }
   .stage-section { padding: 84px 16px 64px; }
+  .hero-logo { width: min(78vw, 340px); }
+  .hero-title { letter-spacing: 0.1em; }
 }

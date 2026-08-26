@@ -1,0 +1,17 @@
+export const HeroMark = ({ reducedMotion }: { reducedMotion: boolean }) => (
+  <div className={`hero-mark${reducedMotion ? ' hero-mark--still' : ''}`}>
+    <svg
+      className="hero-logo"
+      viewBox="0 0 700 615"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M99 455 354 0l276 488H528L354 166l-97 183z" />
+      <path d="m417 571 117-58h109l57 102H470z" />
+      <path d="M0 592c72-42 132-105 194-158 62-54 126-98 193-105 64-7 116 19 123 85-20-39-61-61-108-62-74-1-137 47-195 105C145 520 92 574 0 592Z" />
+      <path d="M65 615c91-32 139-97 184-151 36-43 74-77 130-90 46-11 94-4 131 30-38-19-81-22-119-10-70 22-105 83-143 135-41 56-90 89-183 86Z" />
+      <path d="M291 451c24-53 70-83 122-81 41 1 78 19 97 46-26-21-59-31-88-25-52 10-83 55-80 104 3 46 35 82 91 102 14 5 31 10 50 15-79 7-140-9-181-48-31-31-42-72-11-113Z" />
+    </svg>
+    <h1 className="hero-title">LAMINAR</h1>
+  </div>
+)

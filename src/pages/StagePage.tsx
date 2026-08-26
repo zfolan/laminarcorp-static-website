@@ -3,15 +3,14 @@ import { MotionConfig, motion, useReducedMotion } from 'motion/react'
 import { useLocation } from 'react-router-dom'
 import { AccessOverlay } from '../components/stage/AccessOverlay'
 import { AetherCanvas } from '../components/stage/AetherCanvas'
+import { HeroMark } from '../components/stage/HeroMark'
 import { AnalyticsFrame } from '../components/stage/scenes/AnalyticsFrame'
 import { HouseholdsFrame } from '../components/stage/scenes/HouseholdsFrame'
 import { RebalanceFrame } from '../components/stage/scenes/RebalanceFrame'
 import { StageChrome } from '../components/stage/StageChrome'
-import { StageNodes } from '../components/stage/StageNodes'
 import { StageSection } from '../components/stage/StageSection'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { initialStageState, reduceStage } from '../lib/stageState'
-import type { SceneId } from '../types/stage'
 
 export const StagePage = () => {
   const [state, dispatch] = useReducer(reduceStage, initialStageState)
@@ -30,11 +29,6 @@ export const StagePage = () => {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const scrollToScene = (scene: SceneId) => {
-    document.getElementById(scene)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
-    window.history.replaceState(null, '', `#${scene}`)
-  }
-
   useEffect(() => {
     const id = location.hash.replace('#', '')
     if (id) document.getElementById(id)?.scrollIntoView({ behavior: 'auto' })
@@ -46,7 +40,7 @@ export const StagePage = () => {
         <AetherCanvas reducedMotion={reducedMotion} />
         <StageChrome onRequestAccess={() => dispatch({ type: 'open-access' })} />
         <section className="stage-hero" aria-label="Laminar Apex">
-          <StageNodes onSelect={scrollToScene} />
+          <HeroMark reducedMotion={reducedMotion} />
         </section>
         <StageSection scene="households" reducedMotion={reducedMotion}>
           <HouseholdsFrame />

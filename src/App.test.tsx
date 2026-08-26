@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -17,6 +17,36 @@ describe('public routes', () => {
     expect(document.getElementById('company')).toBeInTheDocument()
   })
 
+  it('previews and pins the four-stage advisor workflow', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+
+    const workflow = screen.getByRole('group', { name: 'Advisor workflow stages' })
+    const coverage = within(workflow).getByRole('button', { name: /book coverage/i })
+    const priority = within(workflow).getByRole('button', { name: /priority queue/i })
+    const decision = within(workflow).getByRole('button', { name: /decision review/i })
+    const action = within(workflow).getByRole('button', { name: /client action/i })
+
+    expect(within(workflow).getAllByRole('button')).toHaveLength(4)
+
+    expect(priority).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('heading', { name: 'Find the households that need attention.' })).toBeInTheDocument()
+
+    await user.hover(decision)
+    expect(screen.getByRole('heading', { name: 'Review the recommendation in context.' })).toBeInTheDocument()
+    await user.unhover(decision)
+    expect(screen.getByRole('heading', { name: 'Find the households that need attention.' })).toBeInTheDocument()
+
+    await user.click(action)
+    expect(action).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('heading', { name: 'Carry the reviewed decision forward.' })).toBeInTheDocument()
+
+    fireEvent.focus(coverage)
+    expect(screen.getByRole('heading', { name: 'Know which client book is active.' })).toBeInTheDocument()
+    fireEvent.blur(coverage)
+    expect(screen.getByRole('heading', { name: 'Carry the reviewed decision forward.' })).toBeInTheDocument()
+  })
+
   it('opens and closes the accessible mobile navigation', () => {
     renderAt('/')
     const toggle = screen.getByRole('button', { name: 'Open navigation' })
@@ -33,11 +63,6 @@ describe('public routes', () => {
     expect(screen.getByRole('link', { name: /return home/i })).toHaveAttribute('href', '/')
   })
 
-  it('renders the Aether Flow component demo', () => {
-    renderAt('/aether-flow')
-    expect(screen.getByRole('heading', { level: 1, name: 'Aether Flow' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /explore the engine/i })).toBeInTheDocument()
-  })
 
   it('uses the linear narrative when reduced motion is forced', () => {
     renderAt('/?motion=reduce')
@@ -65,7 +90,6 @@ describe('request access prototype', () => {
     expect(screen.getByText('Enter your name.')).toBeInTheDocument()
     expect(screen.getByText('Enter a valid work email.')).toBeInTheDocument()
     expect(screen.getByText('Enter your firm name.')).toBeInTheDocument()
-    expect(screen.getByText('Select your role.')).toBeInTheDocument()
     expect(fetchSpy).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
   })

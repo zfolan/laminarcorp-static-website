@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -45,7 +45,9 @@ describe('StagePage first load', () => {
     expect(screen.getByText(STAGE_CAPTIONS.rebalance)).toBeInTheDocument()
 
     await user.keyboard('{Escape}')
-    expect(screen.queryByText(STAGE_CAPTIONS.rebalance)).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText(STAGE_CAPTIONS.rebalance)).not.toBeInTheDocument()
+    })
   })
 
   it('closes when the open frame is clicked', async () => {
@@ -53,7 +55,9 @@ describe('StagePage first load', () => {
     renderStage()
     await user.click(screen.getByRole('button', { name: 'Analytics' }))
     await user.click(screen.getByRole('button', { name: 'Close Analytics preview' }))
-    expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
+    })
   })
 
   it('renders the reduced household library', async () => {
@@ -113,6 +117,19 @@ describe('StagePage first load', () => {
     await user.type(screen.getByLabelText(/^firm/i), 'Northstar Advisory')
     await user.click(screen.getByRole('button', { name: 'Send request' }))
     expect(await screen.findByText(/request received/i)).toBeInTheDocument()
+  })
+
+  it('still opens scenes when reduced motion is forced', async () => {
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/?motion=reduce')
+    render(
+      <MemoryRouter initialEntries={['/?motion=reduce']}>
+        <StagePage />
+      </MemoryRouter>,
+    )
+    expect(document.querySelector('[data-aether-field]')).toHaveClass('aether-field--still')
+    await user.click(screen.getByRole('button', { name: 'Households' }))
+    expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
   })
 
   it('keeps the form and shows a retryable error when submit fails', async () => {

@@ -6,9 +6,11 @@ const NODES: { id: SceneId; label: string }[] = [
   { id: 'analytics', label: 'Analytics' },
 ]
 
+type Origin = { x: number; y: number }
+
 type Props = {
   scene: SceneId | 'none'
-  onSelect: (id: SceneId) => void
+  onSelect: (id: SceneId, origin: Origin) => void
 }
 
 export const StageNodes = ({ scene, onSelect }: Props) => (
@@ -21,7 +23,10 @@ export const StageNodes = ({ scene, onSelect }: Props) => (
           type="button"
           className={`stage-node stage-node--${node.id} stage-node--${state}`}
           aria-pressed={scene === node.id}
-          onClick={() => onSelect(node.id)}
+          onClick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect()
+            onSelect(node.id, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+          }}
         >
           {node.label}
         </button>

@@ -472,7 +472,7 @@ button { color: inherit; }
 .stage-node--rebalance { top: 28%; right: 14%; }
 .stage-node--analytics { bottom: 22%; left: 42%; }
 .stage-node--quieter { opacity: 0.45; }
-.stage-node--active { border-color: var(--blue-bright); }
+.stage-node--active { opacity: 0; pointer-events: none; }
 .product-stage {
   position: absolute;
   z-index: 4;

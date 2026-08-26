@@ -70,4 +70,17 @@ describe('StagePage first load', () => {
     expect(screen.getAllByText('BUY').length).toBeGreaterThan(0)
     expect(screen.queryByText('Review & validate')).not.toBeInTheDocument()
   })
+
+  it('renders the reduced household overview', async () => {
+    const user = userEvent.setup()
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Analytics' }))
+    expect(screen.getByText('Chen Family')).toBeInTheDocument()
+    expect(screen.getByText(/sector allocation drift/i)).toBeInTheDocument()
+    expect(screen.getByText(/currency exposure/i)).toBeInTheDocument()
+    expect(screen.getByText('CAD')).toBeInTheDocument()
+    expect(screen.getByText('USD')).toBeInTheDocument()
+    expect(screen.queryByText('Whole Book')).not.toBeInTheDocument()
+    expect(screen.queryByText('Add note')).not.toBeInTheDocument()
+  })
 })

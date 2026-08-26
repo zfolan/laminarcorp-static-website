@@ -556,6 +556,17 @@ button { color: inherit; }
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.scene-panels {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 16px;
+}
+.scene-strip {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 767px) {
+  .scene-panels { grid-template-columns: 1fr; }
+}
 @media (max-width: 767px) {
   .stage-nodes { inset: auto 16px 20px; display: flex; gap: 8px; }
   .stage-node { position: static; flex: 1; }

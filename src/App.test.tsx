@@ -16,6 +16,7 @@ describe('public routes', () => {
 
   it('renders a recovery route for unknown paths', () => {
     renderAt('/missing-page')
+    expect(screen.getByRole('heading', { name: 'Page not found.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /return home/i })).toHaveAttribute('href', '/')
   })
 })

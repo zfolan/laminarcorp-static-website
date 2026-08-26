@@ -567,6 +567,63 @@ button { color: inherit; }
 @media (max-width: 767px) {
   .scene-panels { grid-template-columns: 1fr; }
 }
+.access-overlay {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.access-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(7, 9, 13, 0.55);
+  cursor: pointer;
+}
+.access-overlay__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.access-overlay__dialog h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 500;
+}
+.access-overlay__dialog form,
+.access-overlay__dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.access-overlay__dialog form { gap: 14px; }
+.access-overlay__dialog input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--canvas);
+  color: var(--platinum);
+}
+.access-overlay__dialog small,
+.access-overlay__error {
+  color: var(--red);
+  font-size: 12px;
+}
+.access-overlay__dialog button[type='submit'],
+.access-overlay__dialog button[type='button']:not(.access-overlay__backdrop) {
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--raised);
+  color: var(--platinum);
+  cursor: pointer;
+}
 @media (max-width: 767px) {
   .stage-nodes { inset: auto 16px 20px; display: flex; gap: 8px; }
   .stage-node { position: static; flex: 1; }

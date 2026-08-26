@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'react'
+import { AccessOverlay } from '../components/stage/AccessOverlay'
 import { ProductFrame } from '../components/stage/ProductFrame'
 import { AnalyticsFrame } from '../components/stage/scenes/AnalyticsFrame'
 import { HouseholdsFrame } from '../components/stage/scenes/HouseholdsFrame'
@@ -37,6 +38,9 @@ export const StagePage = () => {
         <ProductFrame scene={state.scene} onClose={() => dispatch({ type: 'close-scene' })}>
           {sceneFrame[state.scene]}
         </ProductFrame>
+      ) : null}
+      {state.access !== 'closed' ? (
+        <AccessOverlay access={state.access} accessError={state.accessError} dispatch={dispatch} />
       ) : null}
     </div>
   )

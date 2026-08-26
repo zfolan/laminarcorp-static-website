@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { STAGE_CAPTIONS } from '../data/stageBook'
 import { StagePage } from './StagePage'
+
+afterEach(() => vi.restoreAllMocks())
 
 const renderStage = () => render(
   <MemoryRouter>
@@ -82,5 +84,41 @@ describe('StagePage first load', () => {
     expect(screen.getByText('USD')).toBeInTheDocument()
     expect(screen.queryByText('Whole Book')).not.toBeInTheDocument()
     expect(screen.queryByText('Add note')).not.toBeInTheDocument()
+  })
+
+  it('validates the access form in the overlay without leaving the page', async () => {
+    const user = userEvent.setup()
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Households' }))
+    await user.click(screen.getByRole('button', { name: 'Request access' }))
+    expect(screen.getByRole('dialog', { name: 'Request access' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Send request' }))
+    expect(screen.getByText('Enter your name.')).toBeInTheDocument()
+    expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
+  })
+
+  it('shows confirmation on success and keeps the scene', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Request access' }))
+    await user.type(screen.getByLabelText(/^name/i), 'Nolan Patel')
+    await user.type(screen.getByLabelText(/email/i), 'nolan@example.com')
+    await user.type(screen.getByLabelText(/^firm/i), 'Northstar Advisory')
+    await user.click(screen.getByRole('button', { name: 'Send request' }))
+    expect(await screen.findByText(/request received/i)).toBeInTheDocument()
+  })
+
+  it('keeps the form and shows a retryable error when submit fails', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 500 }))
+    renderStage()
+    await user.click(screen.getByRole('button', { name: 'Request access' }))
+    await user.type(screen.getByLabelText(/^name/i), 'Nolan Patel')
+    await user.type(screen.getByLabelText(/email/i), 'nolan@example.com')
+    await user.type(screen.getByLabelText(/^firm/i), 'Northstar Advisory')
+    await user.click(screen.getByRole('button', { name: 'Send request' }))
+    expect(await screen.findByText('Could not send your request. Try again.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^name/i)).toBeInTheDocument()
   })
 })

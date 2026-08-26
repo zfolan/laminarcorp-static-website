@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -13,8 +13,8 @@ const renderStage = () => render(
   </MemoryRouter>,
 )
 
-describe('StagePage first load', () => {
-  it('shows wordmark, request access, and three nodes with no scene', () => {
+describe('StagePage', () => {
+  it('shows the aether hero without expanding a product panel', () => {
     renderStage()
     expect(screen.getByText('LAMINAR')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /laminar/i })).not.toBeInTheDocument()
@@ -22,9 +22,10 @@ describe('StagePage first load', () => {
     expect(screen.getByRole('button', { name: 'Households' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rebalance' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Analytics' })).toBeInTheDocument()
-    expect(screen.queryByText(STAGE_CAPTIONS.households)).not.toBeInTheDocument()
-    expect(screen.queryByText(STAGE_CAPTIONS.rebalance)).not.toBeInTheDocument()
-    expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /close .* preview/i })).not.toBeInTheDocument()
+    expect(document.getElementById('households')).toBeInTheDocument()
+    expect(document.getElementById('rebalance')).toBeInTheDocument()
+    expect(document.getElementById('analytics')).toBeInTheDocument()
   })
 
   it('keeps the aether field decorative and still works when canvas context is missing', () => {
@@ -33,63 +34,42 @@ describe('StagePage first load', () => {
     expect(field).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('opens, swaps, and closes product scenes', async () => {
+  it('scrolls to a product section instead of expanding a panel', async () => {
     const user = userEvent.setup()
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
     renderStage()
     await user.click(screen.getByRole('button', { name: 'Households' }))
-    expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Households' })).toHaveAttribute('aria-pressed', 'true')
-
-    await user.click(screen.getByRole('button', { name: 'Rebalance' }))
-    expect(screen.queryByText(STAGE_CAPTIONS.households)).not.toBeInTheDocument()
-    expect(screen.getByText(STAGE_CAPTIONS.rebalance)).toBeInTheDocument()
-
-    await user.keyboard('{Escape}')
-    await waitFor(() => {
-      expect(screen.queryByText(STAGE_CAPTIONS.rebalance)).not.toBeInTheDocument()
-    })
+    expect(scrollSpy).toHaveBeenCalled()
+    expect(document.getElementById('households')).toContainElement(screen.getByText(STAGE_CAPTIONS.households))
   })
 
-  it('closes when the open frame is clicked', async () => {
-    const user = userEvent.setup()
+  it('renders the household library in the page', () => {
     renderStage()
-    await user.click(screen.getByRole('button', { name: 'Analytics' }))
-    await user.click(screen.getByRole('button', { name: 'Close Analytics preview' }))
-    await waitFor(() => {
-      expect(screen.queryByText(STAGE_CAPTIONS.analytics)).not.toBeInTheDocument()
-    })
-  })
-
-  it('renders the reduced household library', async () => {
-    const user = userEvent.setup()
-    renderStage()
-    await user.click(screen.getByRole('button', { name: 'Households' }))
-    expect(screen.getAllByText('At Risk').length).toBeGreaterThan(0)
-    expect(screen.getByText('Chen Family')).toBeInTheDocument()
-    expect(screen.getByText('Rivera Household')).toBeInTheDocument()
+    const library = within(document.getElementById('households') as HTMLElement)
+    expect(library.getByText('Chen Family')).toBeInTheDocument()
+    expect(library.getByText('Rivera Household')).toBeInTheDocument()
+    expect(library.getAllByText('At Risk').length).toBeGreaterThan(0)
+    expect(library.getByText('On Target')).toBeInTheDocument()
     expect(screen.queryByText('Upload CSV')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /rebalance households/i })).not.toBeInTheDocument()
   })
 
-  it('renders the reduced rebalance workspace', async () => {
-    const user = userEvent.setup()
+  it('renders the rebalance workspace in the page', () => {
     renderStage()
-    await user.click(screen.getByRole('button', { name: 'Rebalance' }))
-    expect(screen.getByText('RRSP')).toBeInTheDocument()
-    expect(screen.getByText('CAD TAXABLE')).toBeInTheDocument()
-    expect(screen.getByText('ZCS')).toBeInTheDocument()
-    expect(screen.getAllByText('SELL').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('BUY').length).toBeGreaterThan(0)
+    const rebalance = within(document.getElementById('rebalance') as HTMLElement)
+    expect(rebalance.getByText(/RRSP/)).toBeInTheDocument()
+    expect(rebalance.getByText(/TFSA/)).toBeInTheDocument()
+    expect(rebalance.getByText(/CAD TAXABLE/)).toBeInTheDocument()
+    expect(rebalance.getByText('ZCS')).toBeInTheDocument()
+    expect(rebalance.getAllByText('SELL').length).toBeGreaterThan(0)
+    expect(rebalance.getAllByText('BUY').length).toBeGreaterThan(0)
     expect(screen.queryByText('Review & validate')).not.toBeInTheDocument()
   })
 
-  it('renders the reduced household overview', async () => {
-    const user = userEvent.setup()
+  it('renders the household overview in the page', () => {
     renderStage()
-    await user.click(screen.getByRole('button', { name: 'Analytics' }))
-    expect(screen.getByText('Chen Family')).toBeInTheDocument()
     expect(screen.getByText(/sector allocation drift/i)).toBeInTheDocument()
     expect(screen.getByText(/currency exposure/i)).toBeInTheDocument()
+    expect(screen.getByText(/largest holdings/i)).toBeInTheDocument()
     expect(screen.getByText('CAD')).toBeInTheDocument()
     expect(screen.getByText('USD')).toBeInTheDocument()
     expect(screen.queryByText('Whole Book')).not.toBeInTheDocument()
@@ -99,7 +79,6 @@ describe('StagePage first load', () => {
   it('validates the access form in the overlay without leaving the page', async () => {
     const user = userEvent.setup()
     renderStage()
-    await user.click(screen.getByRole('button', { name: 'Households' }))
     await user.click(screen.getByRole('button', { name: 'Request access' }))
     expect(screen.getByRole('dialog', { name: 'Request access' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Send request' }))
@@ -107,7 +86,7 @@ describe('StagePage first load', () => {
     expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
   })
 
-  it('shows confirmation on success and keeps the scene', async () => {
+  it('shows confirmation on success', async () => {
     const user = userEvent.setup()
     vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
     renderStage()
@@ -119,8 +98,7 @@ describe('StagePage first load', () => {
     expect(await screen.findByText(/request received/i)).toBeInTheDocument()
   })
 
-  it('still opens scenes when reduced motion is forced', async () => {
-    const user = userEvent.setup()
+  it('still shows product sections when reduced motion is forced', () => {
     window.history.pushState({}, '', '/?motion=reduce')
     render(
       <MemoryRouter initialEntries={['/?motion=reduce']}>
@@ -128,8 +106,7 @@ describe('StagePage first load', () => {
       </MemoryRouter>,
     )
     expect(document.querySelector('[data-aether-field]')).toHaveClass('aether-field--still')
-    await user.click(screen.getByRole('button', { name: 'Households' }))
-    expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
+    expect(document.getElementById('households')).toBeInTheDocument()
   })
 
   it('keeps the form and shows a retryable error when submit fails', async () => {

@@ -1,26 +1,20 @@
-import { useEffect, useReducer, useState } from 'react'
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useReducer } from 'react'
+import { MotionConfig, motion, useReducedMotion } from 'motion/react'
 import { useLocation } from 'react-router-dom'
 import { AccessOverlay } from '../components/stage/AccessOverlay'
 import { AetherCanvas } from '../components/stage/AetherCanvas'
-import { ProductFrame } from '../components/stage/ProductFrame'
 import { AnalyticsFrame } from '../components/stage/scenes/AnalyticsFrame'
 import { HouseholdsFrame } from '../components/stage/scenes/HouseholdsFrame'
 import { RebalanceFrame } from '../components/stage/scenes/RebalanceFrame'
 import { StageChrome } from '../components/stage/StageChrome'
 import { StageNodes } from '../components/stage/StageNodes'
+import { StageSection } from '../components/stage/StageSection'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { initialStageState, reduceStage } from '../lib/stageState'
-
-const sceneFrame = {
-  households: <HouseholdsFrame />,
-  rebalance: <RebalanceFrame />,
-  analytics: <AnalyticsFrame />,
-}
+import type { SceneId } from '../types/stage'
 
 export const StagePage = () => {
   const [state, dispatch] = useReducer(reduceStage, initialStageState)
-  const [origin, setOrigin] = useState({ x: 0, y: 0 })
   const location = useLocation()
   const reducedMotion = Boolean(useReducedMotion()) || new URLSearchParams(location.search).get('motion') === 'reduce'
   usePageMeta({
@@ -36,50 +30,27 @@ export const StagePage = () => {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  const scrollToScene = (scene: SceneId) => {
+    document.getElementById(scene)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
+  }
+
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
       <div className="stage-page">
-        <AetherCanvas
-          dimmed={state.scene !== 'none'}
-          reducedMotion={reducedMotion}
-          onEmptyPointerDown={() => {
-            if (state.scene !== 'none') dispatch({ type: 'close-scene' })
-          }}
-        />
+        <AetherCanvas reducedMotion={reducedMotion} />
         <StageChrome onRequestAccess={() => dispatch({ type: 'open-access' })} />
-        <StageNodes
-          scene={state.scene}
-          onSelect={(scene, nextOrigin) => {
-            setOrigin(nextOrigin)
-            dispatch({ type: 'open-scene', scene })
-          }}
-        />
-        {reducedMotion ? (
-          state.scene !== 'none' ? (
-            <ProductFrame
-              scene={state.scene}
-              origin={origin}
-              reducedMotion
-              onClose={() => dispatch({ type: 'close-scene' })}
-            >
-              {sceneFrame[state.scene]}
-            </ProductFrame>
-          ) : null
-        ) : (
-          <AnimatePresence mode="wait">
-            {state.scene !== 'none' ? (
-              <ProductFrame
-                key={state.scene}
-                scene={state.scene}
-                origin={origin}
-                reducedMotion={false}
-                onClose={() => dispatch({ type: 'close-scene' })}
-              >
-                {sceneFrame[state.scene]}
-              </ProductFrame>
-            ) : null}
-          </AnimatePresence>
-        )}
+        <section className="stage-hero" aria-label="Laminar Apex">
+          <StageNodes onSelect={scrollToScene} />
+        </section>
+        <StageSection scene="households">
+          <HouseholdsFrame />
+        </StageSection>
+        <StageSection scene="rebalance">
+          <RebalanceFrame />
+        </StageSection>
+        <StageSection scene="analytics">
+          <AnalyticsFrame />
+        </StageSection>
         {state.access !== 'closed' ? (
           <motion.div
             initial={reducedMotion ? false : { opacity: 0 }}

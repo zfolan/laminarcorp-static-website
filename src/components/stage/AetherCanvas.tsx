@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 type Props = {
-  dimmed: boolean
   reducedMotion: boolean
-  onEmptyPointerDown: () => void
 }
 
 type Particle = {
@@ -14,7 +12,7 @@ type Particle = {
   size: number
 }
 
-export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Props) => {
+export const AetherCanvas = ({ reducedMotion }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -31,10 +29,10 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
 
     const readAnchors = () => {
       const canvasBounds = canvas.getBoundingClientRect()
-      anchors = [...document.querySelectorAll<HTMLElement>('.stage-node:not(.stage-node--active)')].map((node) => {
+      anchors = [...document.querySelectorAll<HTMLElement>('.stage-node__core')].map((node) => {
         const rect = node.getBoundingClientRect()
         return {
-          x: rect.left + 18 - canvasBounds.left,
+          x: rect.left + rect.width / 2 - canvasBounds.left,
           y: rect.top + rect.height / 2 - canvasBounds.top,
         }
       })
@@ -42,13 +40,13 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
 
     const init = () => {
       particles = []
-      const count = Math.min(120, Math.floor((canvas.width * canvas.height) / 14000))
+      const count = Math.min(240, Math.max(90, Math.floor((canvas.width * canvas.height) / 16000)))
       for (let i = 0; i < count; i += 1) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          directionX: Math.random() * 0.4 - 0.2,
-          directionY: Math.random() * 0.4 - 0.2,
+          directionX: Math.random() * 0.32 - 0.16,
+          directionY: Math.random() * 0.18 + 0.1,
           size: Math.random() * 2 + 0.8,
         })
       }
@@ -59,6 +57,7 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
       canvas.width = parent?.clientWidth ?? window.innerWidth
       canvas.height = parent?.clientHeight ?? window.innerHeight
       init()
+      readAnchors()
     }
 
     const draw = (particle: Particle) => {
@@ -70,12 +69,11 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
 
     const update = (particle: Particle) => {
       if (particle.x > canvas.width || particle.x < 0) particle.directionX *= -1
-      if (particle.y > canvas.height || particle.y < 0) particle.directionY *= -1
       if (mouse.x !== null && mouse.y !== null) {
         const dx = mouse.x - particle.x
         const dy = mouse.y - particle.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-        if (distance < mouse.radius + particle.size) {
+        if (distance < mouse.radius + particle.size && distance > 0) {
           const force = (mouse.radius - distance) / mouse.radius
           particle.x -= (dx / distance) * force * 5
           particle.y -= (dy / distance) * force * 5
@@ -86,12 +84,14 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
         const ay = anchor.y - particle.y
         const reach = Math.sqrt(ax * ax + ay * ay)
         if (reach < 160 && reach > 0.1) {
-          particle.x += (ax / reach) * 0.06
-          particle.y += (ay / reach) * 0.06
+          particle.x += (ax / reach) * 0.05
+          particle.y += (ay / reach) * 0.05
         }
       }
       particle.x += particle.directionX
       particle.y += particle.directionY
+      if (particle.y > canvas.height) particle.y = 0
+      if (particle.y < 0) particle.y = canvas.height
       draw(particle)
     }
 
@@ -115,8 +115,8 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
           const dx = particles[a].x - anchor.x
           const dy = particles[a].y - anchor.y
           const distance = dx * dx + dy * dy
-          if (distance < 22000) {
-            ctx.strokeStyle = `rgba(131, 169, 204, ${0.38 * (1 - distance / 22000)})`
+          if (distance < 24000) {
+            ctx.strokeStyle = `rgba(131, 169, 204, ${0.4 * (1 - distance / 24000)})`
             ctx.lineWidth = 1
             ctx.beginPath()
             ctx.moveTo(particles[a].x, particles[a].y)
@@ -148,25 +148,23 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
     }
 
     resize()
-    readAnchors()
     animate()
     window.addEventListener('resize', resize)
-    canvas.addEventListener('mousemove', onMove)
-    canvas.addEventListener('mouseleave', onOut)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseout', onOut)
     return () => {
       window.removeEventListener('resize', resize)
-      canvas.removeEventListener('mousemove', onMove)
-      canvas.removeEventListener('mouseleave', onOut)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseout', onOut)
       cancelAnimationFrame(frame)
     }
   }, [reducedMotion])
 
   return (
     <div
-      className={`aether-field${dimmed ? ' aether-field--dimmed' : ''}${reducedMotion ? ' aether-field--still' : ''}`}
+      className={`aether-field${reducedMotion ? ' aether-field--still' : ''}`}
       data-aether-field
       aria-hidden="true"
-      onPointerDown={onEmptyPointerDown}
     >
       <canvas ref={canvasRef} />
     </div>

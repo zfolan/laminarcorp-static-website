@@ -8,12 +8,14 @@ const pct = (value: number) => `${(value * 100).toFixed(1).replace(/\.0$/, '')}%
 const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${pct(value)}`
 
 export const AnalyticsFrame = () => {
-  const { household, total, sleeves, drift, sectors, currency } = stageBook.analytics
+  const { household, total, sleeves, drift, sectors, currency, holdings = [], largest = [] } = stageBook.analytics
   return (
     <div className="scene-frame">
-      <p className="scene-frame__title">Household Overview</p>
-      <p className="scene-household-name">{household}</p>
-      <div className="scene-strip">
+      <div className="scene-overview-head">
+        <p className="scene-household-name">{household}</p>
+        <span className="status-pill">{pct(drift)} model drift</span>
+      </div>
+      <div className="scene-strip scene-strip--five">
         <div>
           <span>Total value</span>
           <strong>{money(total)}</strong>
@@ -34,34 +36,21 @@ export const AnalyticsFrame = () => {
           <span>Off model</span>
           <strong>{money(sleeves.offModel.value)} · {pct(sleeves.offModel.weight)}</strong>
         </div>
-        <div>
-          <span>Model drift</span>
-          <strong>{pct(drift)}</strong>
-        </div>
       </div>
       <div className="scene-panels">
         <section>
           <p className="scene-account__type">Sector allocation drift</p>
-          <table className="scene-table">
-            <thead>
-              <tr>
-                <th>Sector</th>
-                <th>Current</th>
-                <th>Model</th>
-                <th>Drift</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sectors.map((sector) => (
-                <tr key={sector.name}>
-                  <td>{sector.name}</td>
-                  <td>{pct(sector.current)}</td>
-                  <td>{pct(sector.model)}</td>
-                  <td>{signedPct(sector.drift)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {sectors.map((sector) => (
+            <div className="sector-row" key={sector.name}>
+              <span>{sector.name}</span>
+              <div className="sector-row__bars" aria-hidden="true">
+                <i className="sector-row__current" style={{ width: pct(Math.abs(sector.current)) }} />
+                <i className="sector-row__model" style={{ width: pct(Math.abs(sector.model)) }} />
+              </div>
+              <small>{pct(sector.current)} / {pct(sector.model)}</small>
+              <b>{signedPct(sector.drift)}</b>
+            </div>
+          ))}
         </section>
         <section>
           <p className="scene-account__type">Currency exposure</p>
@@ -86,8 +75,52 @@ export const AnalyticsFrame = () => {
               </tr>
             </tbody>
           </table>
+          <p className="scene-account__type">Largest holdings</p>
+          <table className="scene-table">
+            <thead>
+              <tr>
+                <th>Security</th>
+                <th>Value</th>
+                <th>Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              {largest.map((row) => (
+                <tr key={row.ticker}>
+                  <td>{row.ticker} {row.name}</td>
+                  <td>{money(row.value)}</td>
+                  <td>{pct(row.weight)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       </div>
+      <p className="scene-account__type">Holdings drift</p>
+      <table className="scene-table">
+        <thead>
+          <tr>
+            <th>Security</th>
+            <th>Sleeve</th>
+            <th>Account</th>
+            <th>Weight</th>
+            <th>Drift</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {holdings.map((row) => (
+            <tr key={`${row.ticker}-${row.account}`}>
+              <td>{row.ticker} {row.name}</td>
+              <td>{row.sleeve}</td>
+              <td>{row.account}</td>
+              <td>{pct(row.weight)}</td>
+              <td>{signedPct(row.drift)}</td>
+              <td><span className="status-pill">{row.status}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

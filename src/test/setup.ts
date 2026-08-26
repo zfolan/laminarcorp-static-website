@@ -20,7 +20,11 @@ Object.defineProperty(window, 'matchMedia', {
 
 Object.defineProperty(window, 'scrollTo', { writable: true, value: vi.fn() })
 Object.defineProperty(Element.prototype, 'scrollIntoView', { writable: true, value: vi.fn() })
-Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', { writable: true, value: vi.fn(() => null) })
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  configurable: true,
+  writable: true,
+  value: vi.fn(() => null),
+})
 
 class ResizeObserverMock {
   observe = vi.fn()

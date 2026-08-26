@@ -15,17 +15,26 @@ export const HouseholdsFrame = () => (
     </header>
 
     <div className="library__strip" aria-label="Household summary">
-      <div className="library__metric library__metric--risk">
-        <span>At risk</span>
-        <strong>{stageBook.strip.atRisk}</strong>
+      <div className="library__metric library__metric--accent">
+        <i className="library__accent library__accent--risk" aria-hidden="true" />
+        <div>
+          <span>At risk</span>
+          <strong>{stageBook.strip.atRisk}</strong>
+        </div>
       </div>
-      <div className="library__metric library__metric--review">
-        <span>Review</span>
-        <strong>{stageBook.strip.review}</strong>
+      <div className="library__metric library__metric--accent">
+        <i className="library__accent library__accent--review" aria-hidden="true" />
+        <div>
+          <span>Review</span>
+          <strong>{stageBook.strip.review}</strong>
+        </div>
       </div>
-      <div className="library__metric library__metric--target">
-        <span>On target</span>
-        <strong>{stageBook.strip.onTarget}</strong>
+      <div className="library__metric library__metric--accent">
+        <i className="library__accent library__accent--target" aria-hidden="true" />
+        <div>
+          <span>On target</span>
+          <strong>{stageBook.strip.onTarget}</strong>
+        </div>
       </div>
       <div className="library__metric">
         <span>Households</span>

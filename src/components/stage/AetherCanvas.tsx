@@ -25,7 +25,20 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
 
     const mouse = { x: null as number | null, y: null as number | null, radius: 200 }
     let particles: Particle[] = []
+    let anchors: { x: number; y: number }[] = []
     let frame = 0
+    let tick = 0
+
+    const readAnchors = () => {
+      const canvasBounds = canvas.getBoundingClientRect()
+      anchors = [...document.querySelectorAll<HTMLElement>('.stage-node:not(.stage-node--active)')].map((node) => {
+        const rect = node.getBoundingClientRect()
+        return {
+          x: rect.left + 18 - canvasBounds.left,
+          y: rect.top + rect.height / 2 - canvasBounds.top,
+        }
+      })
+    }
 
     const init = () => {
       particles = []
@@ -68,6 +81,15 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
           particle.y -= (dy / distance) * force * 5
         }
       }
+      for (const anchor of anchors) {
+        const ax = anchor.x - particle.x
+        const ay = anchor.y - particle.y
+        const reach = Math.sqrt(ax * ax + ay * ay)
+        if (reach < 160 && reach > 0.1) {
+          particle.x += (ax / reach) * 0.06
+          particle.y += (ay / reach) * 0.06
+        }
+      }
       particle.x += particle.directionX
       particle.y += particle.directionY
       draw(particle)
@@ -89,11 +111,26 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
             ctx.stroke()
           }
         }
+        for (const anchor of anchors) {
+          const dx = particles[a].x - anchor.x
+          const dy = particles[a].y - anchor.y
+          const distance = dx * dx + dy * dy
+          if (distance < 22000) {
+            ctx.strokeStyle = `rgba(131, 169, 204, ${0.38 * (1 - distance / 22000)})`
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(particles[a].x, particles[a].y)
+            ctx.lineTo(anchor.x, anchor.y)
+            ctx.stroke()
+          }
+        }
       }
     }
 
     const animate = () => {
       frame = requestAnimationFrame(animate)
+      tick += 1
+      if (tick % 8 === 0) readAnchors()
       ctx.fillStyle = '#07090d'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       particles.forEach(update)
@@ -111,6 +148,7 @@ export const AetherCanvas = ({ dimmed, reducedMotion, onEmptyPointerDown }: Prop
     }
 
     resize()
+    readAnchors()
     animate()
     window.addEventListener('resize', resize)
     canvas.addEventListener('mousemove', onMove)

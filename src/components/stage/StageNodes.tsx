@@ -28,7 +28,8 @@ export const StageNodes = ({ scene, onSelect }: Props) => (
             onSelect(node.id, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
           }}
         >
-          {node.label}
+          <span className="stage-node__core" aria-hidden="true" />
+          <span className="stage-node__label">{node.label}</span>
         </button>
       )
     })}

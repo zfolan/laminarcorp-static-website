@@ -12,6 +12,12 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/laminar-mark.svg" type="image/svg+xml" />
     <title>Laminar Apex</title>
+    <script>
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+      const toTop = () => { if (!location.hash) scrollTo(0, 0) }
+      toTop()
+      addEventListener('load', toTop)
+    </script>
   </head>
   <body>
     <div id="root"></div>

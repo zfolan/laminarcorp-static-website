@@ -8,6 +8,9 @@ import { AnalyticsFrame } from '../components/stage/scenes/AnalyticsFrame'
 import { HouseholdsFrame } from '../components/stage/scenes/HouseholdsFrame'
 import { RebalanceFrame } from '../components/stage/scenes/RebalanceFrame'
 import { StageChrome } from '../components/stage/StageChrome'
+import { StageClose } from '../components/stage/StageClose'
+import { StageIntro } from '../components/stage/StageIntro'
+import { StageScrollHint } from '../components/stage/StageScrollHint'
 import { StageSection } from '../components/stage/StageSection'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { initialStageState, reduceStage } from '../lib/stageState'
@@ -39,9 +42,11 @@ export const StagePage = () => {
       <div className="stage-page">
         <AetherCanvas reducedMotion={reducedMotion} />
         <StageChrome onRequestAccess={() => dispatch({ type: 'open-access' })} />
+        <StageScrollHint reducedMotion={reducedMotion} />
         <section className="stage-hero" aria-label="Laminar Apex">
           <HeroMark reducedMotion={reducedMotion} />
         </section>
+        <StageIntro reducedMotion={reducedMotion} />
         <StageSection scene="households" reducedMotion={reducedMotion}>
           <HouseholdsFrame />
         </StageSection>
@@ -51,6 +56,10 @@ export const StagePage = () => {
         <StageSection scene="analytics" reducedMotion={reducedMotion}>
           <AnalyticsFrame />
         </StageSection>
+        <StageClose
+          reducedMotion={reducedMotion}
+          onRequestAccess={() => dispatch({ type: 'open-access' })}
+        />
         {state.access !== 'closed' ? (
           <motion.div
             initial={reducedMotion ? false : { opacity: 0 }}

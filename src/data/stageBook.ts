@@ -44,8 +44,64 @@ export type AccountGroup = {
 export const STAGE_CAPTIONS: Record<SceneId, string> = {
   households: 'The book, and who needs attention.',
   rebalance: 'Propose the trades, with tax in view.',
-  analytics: 'Tax and allocation in one place.',
+  analytics: 'Insights, from every angle.',
 }
+
+export const STAGE_INTRO = {
+  title: 'An Advanced Portfolio Management System Built for Modern Wealth Management',
+  lead: 'Our portfolio management system is designed to transform the way investment portfolios are managed—from portfolio construction and household-level analysis to tax-aware rebalancing, trade generation, and implementation.',
+  body: 'Rather than simply identifying portfolio drift, the system helps determine what needs to change, where the change should occur, and how it can be implemented most efficiently.',
+}
+
+export type StageBlurb = { title: string; body: string }
+
+export const STAGE_PREFACE: Partial<Record<SceneId, StageBlurb[]>> = {
+  households: [
+    {
+      title: 'One Household. One Portfolio. One Intelligent System.',
+      body: 'Traditional portfolio management tools often analyze accounts individually. Our system takes a household-level approach, allowing portfolio managers to view and manage multiple accounts as one integrated investment portfolio.',
+    },
+  ],
+  rebalance: [
+    {
+      title: 'Intelligent Rebalancing',
+      body: 'The system determines what to trade, how much, and in which accounts—working through cash, CAD/USD, and lot sizes, and flagging exceptions so the process stays consistent and controlled.',
+    },
+    {
+      title: 'Tax-Aware Portfolio Management',
+      body: 'The system folds estimated capital gains, wash sales, and account-specific tax opportunities into the rebalance—so the question is the most efficient way to implement the change across the household, not only what to sell.',
+    },
+    {
+      title: 'Intelligent Asset Location',
+      body: 'The system considers where holdings sit, not only what is owned—registered and non-registered—so placement stays tax-efficient at the household level.',
+    },
+    {
+      title: 'Exception-Based Portfolio Management',
+      body: 'The system surfaces the issues that need judgment—concentration, cash, taxable gains, currency, drift, restrictions, model breaks, trading limits, household overlap—so the manager can review, modify, and approve.',
+    },
+  ],
+  analytics: [
+    {
+      title: 'One View of the Household',
+      body: 'The system brings the household together in a single view—so you can see the full picture, not a pile of separate accounts.',
+    },
+    {
+      title: 'See How the Book Stands',
+      body: 'The system shows the household as it is, against how it should look—so the gaps are obvious, and so is what matters first.',
+    },
+  ],
+}
+
+export const STAGE_OUTRO: StageBlurb[] = [
+  {
+    title: 'Designed to Scale',
+    body: 'The system lets teams manage more assets and more complex households without a matching rise in workload—so professionals spend time on investment decisions, client relationships, tax and planning, risk, and oversight.',
+  },
+  {
+    title: 'More Than a Rebalancing Tool',
+    body: 'It is an intelligent portfolio management and implementation platform—connecting construction, household analysis, risk, tax, and trade execution in one workflow. The goal is better information, better implementation, and more time managing client wealth.',
+  },
+]
 
 const target80 = { equity: 0.80, fixedIncome: 0.19, cash: 0.01 }
 const eqLm = 'Core Equity 1M+'

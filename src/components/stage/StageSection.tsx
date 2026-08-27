@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
-import { STAGE_CAPTIONS } from '../../data/stageBook'
+import { STAGE_CAPTIONS, STAGE_PREFACE } from '../../data/stageBook'
 import type { SceneId } from '../../types/stage'
 
 const labels: Record<SceneId, string> = {
@@ -24,45 +24,63 @@ export const StageSection = ({
   scene: SceneId
   children: ReactNode
   reducedMotion?: boolean
-}) => (
-  <section id={scene} className="stage-section" aria-labelledby={`${scene}-title`}>
-    <motion.div
-      className="stage-section__in"
-      initial={reducedMotion ? 'show' : 'hidden'}
-      whileInView="show"
-      viewport={{ once: true, amount: 0.16, margin: '0px 0px -12% 0px' }}
-      variants={{
-        hidden: {},
-        show: {
-          transition: {
-            staggerChildren: reducedMotion ? 0 : 0.1,
-          },
-        },
-      }}
-    >
-      <motion.h2
-        id={`${scene}-title`}
-        className="stage-node section-title"
-        variants={rise}
-        transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
-      >
-        <span className="stage-node__core" aria-hidden="true" />
-        <span className="stage-node__label">{labels[scene]}</span>
-      </motion.h2>
-      <motion.p
-        className="product-caption"
-        variants={rise}
-        transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
-      >
-        {STAGE_CAPTIONS[scene]}
-      </motion.p>
+}) => {
+  const preface = STAGE_PREFACE[scene]
+  return (
+    <section id={scene} className="stage-section" aria-labelledby={`${scene}-title`}>
       <motion.div
-        className="product-surface"
-        variants={rise}
-        transition={{ duration: reducedMotion ? 0 : 0.7, ease }}
+        className="stage-section__in"
+        initial={reducedMotion ? 'show' : 'hidden'}
+        whileInView="show"
+        viewport={{ once: true, amount: 0.16, margin: '0px 0px -12% 0px' }}
+        variants={{
+          hidden: {},
+          show: {
+            transition: {
+              staggerChildren: reducedMotion ? 0 : 0.1,
+            },
+          },
+        }}
       >
-        {children}
+        <motion.h2
+          id={`${scene}-title`}
+          className="stage-node section-title"
+          variants={rise}
+          transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
+        >
+          <span className="stage-node__core" aria-hidden="true" />
+          <span className="stage-node__label">{labels[scene]}</span>
+        </motion.h2>
+        <motion.p
+          className="product-caption"
+          variants={rise}
+          transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
+        >
+          {STAGE_CAPTIONS[scene]}
+        </motion.p>
+        {preface ? (
+          <div className="stage-prefaces">
+            {preface.map((blurb) => (
+              <motion.div
+                key={blurb.title}
+                className="stage-preface"
+                variants={rise}
+                transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
+              >
+                <h3>{blurb.title}</h3>
+                <p>{blurb.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        ) : null}
+        <motion.div
+          className="product-surface"
+          variants={rise}
+          transition={{ duration: reducedMotion ? 0 : 0.7, ease }}
+        >
+          {children}
+        </motion.div>
       </motion.div>
-    </motion.div>
-  </section>
-)
+    </section>
+  )
+}

@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { blockHitsShimmer, buildIdleLinkPath, fillIdleDots, mergeDotBlocks, mouseNearMark, shimmerAlong, sleeveTone, strokeIdleLinks, strokeIdlePath, unboundLinkPairs } from './AetherCanvas'
+import { blockHitsShimmer, buildIdleLinkPath, chordNearFill, fillIdleDots, lineIntersect, mergeClosePoints, mergeDotBlocks, mouseNearMark, segmentHitsFill, segmentInside, shimmerAlong, sleeveTone, strokeIdleLinks, strokeIdlePath, unboundCap, unboundLinkPairs } from './AetherCanvas'
+
+
+
+
+
+
+
+
+
 
 
 
@@ -161,6 +170,84 @@ describe('unboundLinkPairs', () => {
     expect(unboundLinkPairs(points, Math.sqrt(18000), 18000)).toEqual(naive)
   })
 })
+
+describe('unboundCap', () => {
+  it('keeps the dense GPU cap', () => {
+    expect(unboundCap(18000 * 200, true)).toBe(180)
+    expect(unboundCap(18000 * 2, true)).toBe(80)
+  })
+
+  it('spawns fewer free nodes on CPU', () => {
+    expect(unboundCap(18000 * 200, false)).toBeLessThan(unboundCap(18000 * 200, true))
+    expect(unboundCap(18000 * 200, false)).toBe(48)
+  })
+})
+
+describe('segmentHitsFill', () => {
+  it('is true when the chord crosses a filled cell', () => {
+    expect(segmentHitsFill(0, 0, 10, 0, (x, y) => x === 5 && y === 0)).toBe(true)
+  })
+
+  it('is false when the chord stays in empty space', () => {
+    expect(segmentHitsFill(0, 0, 10, 0, () => false)).toBe(false)
+  })
+})
+
+describe('mergeClosePoints', () => {
+  it('collapses near duplicates and remaps links', () => {
+    const { points, links } = mergeClosePoints(
+      [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 20, y: 0 }],
+      [[0, 1], [1, 2]],
+      5,
+    )
+    expect(points).toEqual([{ x: 0, y: 0 }, { x: 20, y: 0 }])
+    expect(links).toEqual([[0, 1]])
+  })
+
+  it('drops self-links after a collapse', () => {
+    const { links } = mergeClosePoints(
+      [{ x: 0, y: 0 }, { x: 1, y: 0 }],
+      [[0, 1]],
+      5,
+    )
+    expect(links).toEqual([])
+  })
+})
+
+describe('chordNearFill', () => {
+  it('keeps a short edge chord next to the fill', () => {
+    expect(chordNearFill(0, 0, 10, 0, (x, y) => x >= 0 && x <= 10 && y >= 0 && y <= 2)).toBe(true)
+  })
+
+  it('drops a chord through empty space', () => {
+    expect(chordNearFill(0, 0, 40, 0, (x, y) => x <= 2 || x >= 38)).toBe(false)
+  })
+})
+
+describe('lineIntersect', () => {
+  it('finds the miter of two offset edges', () => {
+    expect(lineIntersect(0, 1, 1, 0, 1, 0, 0, 1)).toEqual({ x: 1, y: 1 })
+  })
+})
+
+describe('segmentInside', () => {
+  it('rejects a chord that leaves the fill', () => {
+    expect(segmentInside(0, 0, 40, 0, (x) => x <= 2 || x >= 38)).toBe(false)
+  })
+
+  it('keeps a chord that stays inside', () => {
+    expect(segmentInside(0, 0, 10, 0, () => true)).toBe(true)
+  })
+})
+
+
+
+
+
+
+
+
+
 
 
 

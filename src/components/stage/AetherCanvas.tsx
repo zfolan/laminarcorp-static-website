@@ -89,7 +89,94 @@ const segmentHitsPane = (x1: number, y1: number, x2: number, y2: number, pane: P
 }
 
 const inFill = (paths: SVGPathElement[], x: number, y: number) =>
-  paths.some((path) => path.isPointInFill({ x, y }))
+  paths.some((path) => typeof path.isPointInFill === 'function' && path.isPointInFill({ x, y }))
+
+export const segmentHitsFill = (
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  inside: (x: number, y: number) => boolean,
+) => {
+  for (const t of [0.25, 0.5, 0.75]) {
+    if (inside(ax + (bx - ax) * t, ay + (by - ay) * t)) return true
+  }
+  return false
+}
+
+export const chordNearFill = (
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  inside: (x: number, y: number) => boolean,
+  pad = 4,
+) => {
+  const mx = (ax + bx) / 2
+  const my = (ay + by) / 2
+  return (
+    inside(mx, my)
+    || inside(mx + pad, my)
+    || inside(mx - pad, my)
+    || inside(mx, my + pad)
+    || inside(mx, my - pad)
+  )
+}
+
+export const segmentInside = (
+  ax: number, ay: number, bx: number, by: number,
+  inside: (x: number, y: number) => boolean,
+  step = 4,
+) => {
+  const len = Math.hypot(bx - ax, by - ay)
+  const n = Math.max(1, Math.ceil(len / step))
+  for (let i = 1; i < n; i += 1) {
+    const t = i / n
+    if (!inside(ax + (bx - ax) * t, ay + (by - ay) * t)) return false
+  }
+  return true
+}
+
+
+
+export const mergeClosePoints = (
+  points: { x: number; y: number }[],
+  links: Array<[number, number]>,
+  minDist: number,
+) => {
+  const map = new Array<number>(points.length)
+  const kept: { x: number; y: number }[] = []
+  for (let i = 0; i < points.length; i += 1) {
+    const p = points[i]
+    let found = -1
+    for (let k = 0; k < kept.length; k += 1) {
+      if (Math.hypot(p.x - kept[k].x, p.y - kept[k].y) < minDist) {
+        found = k
+        break
+      }
+    }
+    if (found >= 0) map[i] = found
+    else {
+      map[i] = kept.length
+      kept.push(p)
+    }
+  }
+  const seen = new Set<string>()
+  const next: Array<[number, number]> = []
+  for (const [a, b] of links) {
+    const i = map[a]
+    const j = map[b]
+    if (i === j) continue
+    const key = i < j ? `${i},${j}` : `${j},${i}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    next.push([i, j])
+  }
+  return { points: kept, links: next }
+}
+
+
+
 
 const money = (value: number) =>
   value >= 1_000_000
@@ -148,6 +235,13 @@ export const mouseNearMark = (
   return mx >= bounds.minX - radius && mx <= bounds.maxX + radius
     && my >= bounds.minY - radius && my <= bounds.maxY + radius
 }
+
+export const unboundCap = (area: number, gpu: boolean) =>
+  gpu
+    ? Math.min(180, Math.max(80, Math.floor(area / 18000)))
+    : Math.min(48, Math.max(24, Math.floor(area / 48000)))
+
+
 
 export const buildIdleLinkPath = (
   bound: Array<{ home: { x: number; y: number } | null }>,
@@ -306,7 +400,143 @@ const makeTag = (kind: TagKind, name: string): ParticleTag => {
   }
 }
 
-const sampleLogoRibbons = () => {
+export const lineIntersect = (
+  px: number, py: number, dx: number, dy: number,
+  qx: number, qy: number, ex: number, ey: number,
+) => {
+  const cross = dx * ey - dy * ex
+  if (Math.abs(cross) < 1e-8) return null
+  const t = ((qx - px) * ey - (qy - py) * ex) / cross
+  return { x: px + t * dx, y: py + t * dy }
+}
+
+const unit = (x: number, y: number) => {
+  const n = Math.hypot(x, y) || 1
+  return { x: x / n, y: y / n }
+}
+
+const inwardNormal = (
+  px: number, py: number, tx: number, ty: number,
+  offset: number, fills: SVGPathElement[],
+) => {
+  const n = unit(-ty, tx)
+  const left = { x: px + n.x * offset, y: py + n.y * offset }
+  const right = { x: px - n.x * offset, y: py - n.y * offset }
+  const leftIn = inFill(fills, left.x, left.y)
+  const rightIn = inFill(fills, right.x, right.y)
+  if (leftIn && !rightIn) return n
+  if (rightIn && !leftIn) return { x: -n.x, y: -n.y }
+  if (leftIn && rightIn) {
+    const deeper = inFill(fills, px + n.x * (offset + 8), py + n.y * (offset + 8))
+    return deeper ? n : { x: -n.x, y: -n.y }
+  }
+  return null
+}
+
+const simpleOffset = (
+  path: SVGPathElement,
+  at: number,
+  length: number,
+  offset: number,
+  fills: SVGPathElement[],
+) => {
+  const p = path.getPointAtLength(Math.min(Math.max(at, 0), length))
+  if (offset === 0) return { x: p.x, y: p.y }
+  const fwd = path.getPointAtLength(Math.min(length, at + 8))
+  const dir = unit(fwd.x - p.x, fwd.y - p.y)
+  const n = inwardNormal(p.x, p.y, dir.x, dir.y, offset, fills)
+  if (!n) return null
+  return { x: p.x + n.x * offset, y: p.y + n.y * offset }
+}
+
+const offsetAt = (
+  path: SVGPathElement,
+  at: number,
+  length: number,
+  offset: number,
+  fills: SVGPathElement[],
+  capMiter = true,
+) => {
+  const p = path.getPointAtLength(Math.min(Math.max(at, 0), length))
+  if (offset === 0) return { x: p.x, y: p.y }
+  const back = path.getPointAtLength(Math.max(0, at - 8))
+  const fwd = path.getPointAtLength(Math.min(length, at + 8))
+  const inDir = unit(p.x - back.x, p.y - back.y)
+  const outDir = unit(fwd.x - p.x, fwd.y - p.y)
+  const nIn = inwardNormal(p.x, p.y, inDir.x, inDir.y, offset, fills)
+  const nOut = inwardNormal(p.x, p.y, outDir.x, outDir.y, offset, fills)
+  if (!nIn && !nOut) return null
+  if (!nIn) return { x: p.x + nOut!.x * offset, y: p.y + nOut!.y * offset }
+  if (!nOut) return { x: p.x + nIn.x * offset, y: p.y + nIn.y * offset }
+  if (inDir.x * outDir.x + inDir.y * outDir.y >= 0.72) {
+    const n = unit(nIn.x + nOut.x, nIn.y + nOut.y)
+    return { x: p.x + n.x * offset, y: p.y + n.y * offset }
+  }
+  const a = { x: p.x + nIn.x * offset, y: p.y + nIn.y * offset }
+  const b = { x: p.x + nOut.x * offset, y: p.y + nOut.y * offset }
+  const hit = lineIntersect(a.x, a.y, inDir.x, inDir.y, b.x, b.y, outDir.x, outDir.y)
+  if (!hit) return a
+  const miter = Math.hypot(hit.x - p.x, hit.y - p.y)
+  if (capMiter && miter > offset * 2.6) {
+    const k = (offset * 2.2) / miter
+    return { x: p.x + (hit.x - p.x) * k, y: p.y + (hit.y - p.y) * k }
+  }
+  if (!inFill(fills, hit.x, hit.y)) return a
+  return hit
+}
+
+
+const cornerAts = (path: SVGPathElement, length: number) => {
+  const hits: number[] = []
+  let prev = path.getPointAtLength(0)
+  let prevDir = { x: 0, y: 0 }
+  const step = Math.max(3, length / 100)
+  for (let at = step; at < length; at += step) {
+    const p = path.getPointAtLength(at)
+    const dir = unit(p.x - prev.x, p.y - prev.y)
+    if ((prevDir.x || prevDir.y) && prevDir.x * dir.x + prevDir.y * dir.y < 0.72) hits.push(at)
+    prev = p
+    prevDir = dir
+  }
+  return hits
+}
+
+
+
+const FEATURE_A = [{ x: 354, y: 0 }, { x: 354, y: 166 }]
+
+const wrapAt = (at: number, length: number) => {
+  const t = at % length
+  return t < 0 ? t + length : t
+}
+
+const closedCorners = (path: SVGPathElement, length: number, features: { x: number; y: number }[]) => {
+  const ats = cornerAts(path, length)
+  for (const f of features) {
+    let bestAt = 0
+    let bestD = Infinity
+    const step = Math.max(2, length / 200)
+    for (let at = 0; at <= length; at += step) {
+      const p = path.getPointAtLength(Math.min(at, length))
+      const d = Math.hypot(p.x - f.x, p.y - f.y)
+      if (d < bestD) {
+        bestD = d
+        bestAt = Math.min(at, length)
+      }
+    }
+    if (bestD < 14) ats.push(bestAt)
+  }
+  const wrapped = ats.map((value) => wrapAt(value, length)).sort((a, b) => a - b)
+  const out: number[] = []
+  for (const at of wrapped) {
+    if (!out.length || at - out[out.length - 1] > 3) out.push(at)
+  }
+  if (out.length >= 2 && out[0] + length - out[out.length - 1] <= 3) out.pop()
+  return out.length ? out : [0]
+
+}
+
+const sampleLogoRibbons = (sparse: boolean) => {
   const svg = document.querySelector<SVGSVGElement>('.hero-logo')
   if (!svg) return { points: [] as { x: number; y: number }[], links: [] as Array<[number, number]> }
   const paths = [...svg.querySelectorAll('path')]
@@ -317,73 +547,101 @@ const sampleLogoRibbons = () => {
 
   const points: { x: number; y: number }[] = []
   const links: Array<[number, number]> = []
+  const ring = sparse ? 26 : 14
+  const wavePaths = paths.slice(2)
+  const hitsWave = (x: number, y: number) => inFill(wavePaths, x, y)
 
   paths.forEach((path, pathIndex) => {
     const length = path.getTotalLength()
     if (length < 8) return
     const mountain = pathIndex < 2
-    const offsets = mountain ? [0, 14, 28] : [0, 10]
-    const spacing = mountain ? 16 : 14
-    const pathGroups: number[][] = []
-
-    offsets.forEach((offset) => {
-      const contour: { x: number; y: number }[] = []
-      const steps = Math.max(18, Math.round(length / spacing))
-      for (let i = 0; i < steps; i += 1) {
-        const at = (i / steps) * length
-        const point = path.getPointAtLength(at)
-        if (offset === 0) {
-          contour.push({ x: point.x, y: point.y })
-          continue
-        }
-        const ahead = path.getPointAtLength(Math.min(length, at + 3))
-        let nx = -(ahead.y - point.y)
-        let ny = ahead.x - point.x
-        const nlen = Math.hypot(nx, ny) || 1
-        nx /= nlen
-        ny /= nlen
-        const left = { x: point.x + nx * offset, y: point.y + ny * offset }
-        const right = { x: point.x - nx * offset, y: point.y - ny * offset }
-        const leftIn = inFill(paths, left.x, left.y)
-        const rightIn = inFill(paths, right.x, right.y)
-        if (leftIn && !rightIn) contour.push(left)
-        else if (rightIn && !leftIn) contour.push(right)
-        else if (leftIn && rightIn) {
-          const deeperLeft = inFill(paths, point.x + nx * (offset + 8), point.y + ny * (offset + 8))
-          contour.push(deeperLeft ? left : right)
-        }
-      }
-      if (contour.length < 4) return
-      const indices: number[] = []
-      contour.forEach((point) => {
-        indices.push(points.length)
-        points.push(point)
-      })
-      for (let i = 0; i < indices.length - 1; i += 1) links.push([indices[i], indices[i + 1]])
-      const first = contour[0]
-      const last = contour[contour.length - 1]
-      if (Math.hypot(first.x - last.x, first.y - last.y) < 28) links.push([indices[0], indices[indices.length - 1]])
-      pathGroups.push(indices)
+    const offsets = mountain
+      ? (sparse ? [0, ring] : [0, ring, ring * 2])
+      : [0, 7]
+    const spacing = sparse ? (mountain ? 22 : 20) : (mountain ? 16 : 14)
+    const own = [path]
+    const features = pathIndex === 0 ? FEATURE_A : []
+    const corners = closedCorners(path, length, features)
+    const runs = corners.map((a, i) => {
+      const next = corners[(i + 1) % corners.length]
+      const b = next <= a ? next + length : next
+      return { a, b, steps: Math.max(1, Math.round((b - a) / spacing)) }
     })
 
-    for (let ring = 1; ring < pathGroups.length; ring += 1) {
-      const inner = pathGroups[ring]
-      const outer = pathGroups[ring - 1]
-      inner.forEach((index) => {
-        let best = -1
-        let bestDist = 36 * 36
-        outer.forEach((other) => {
-          const dx = points[index].x - points[other].x
-          const dy = points[index].y - points[other].y
-          const dist = dx * dx + dy * dy
-          if (dist < bestDist) {
-            bestDist = dist
-            best = other
-          }
-        })
-        if (best >= 0) links.push([index, best])
+    const keep = (p: { x: number; y: number } | null) => {
+      if (!p) return false
+      if (mountain && hitsWave(p.x, p.y)) return false
+      return true
+    }
+    const add = (p: { x: number; y: number } | null) => {
+      if (!keep(p) || !p) return -1
+      points.push(p)
+      return points.length - 1
+    }
+    const inStroke = (x: number, y: number) => inFill(own, x, y) && !(mountain && hitsWave(x, y))
+    const along = (a: number, b: number) => {
+      if (a < 0 || b < 0 || a === b) return false
+      const pa = points[a]
+      const pb = points[b]
+      if (Math.hypot(pa.x - pb.x, pa.y - pb.y) < 0.75) return false
+      return chordNearFill(pa.x, pa.y, pb.x, pb.y, inStroke)
+    }
+    const rungOk = (a: number, b: number) => {
+      if (a < 0 || b < 0 || a === b) return false
+      const pa = points[a]
+      const pb = points[b]
+      return segmentInside(pa.x, pa.y, pb.x, pb.y, inStroke)
+    }
+    const linkAlong = (a: number, b: number) => {
+      if (along(a, b)) links.push([a, b])
+    }
+
+
+    const slot = new Map<string, number>()
+    const key = (ringI: number, kind: string, i: number, k = 0) => `${ringI}:${kind}:${i}:${k}`
+
+    offsets.forEach((offset, ringI) => {
+      corners.forEach((at, i) => {
+        const p = path.getPointAtLength(wrapAt(at, length))
+        const feature = features.some((f) => Math.hypot(p.x - f.x, p.y - f.y) < 14)
+        slot.set(key(ringI, 'c', i), add(offsetAt(path, wrapAt(at, length), length, offset, own, !feature)))
+      })
+      runs.forEach((run, runI) => {
+        for (let k = 1; k < run.steps; k += 1) {
+          const at = wrapAt(run.a + ((run.b - run.a) * k) / run.steps, length)
+          slot.set(key(ringI, 'i', runI, k), add(simpleOffset(path, at, length, offset, own)))
+        }
+      })
+      runs.forEach((run, runI) => {
+        const start = slot.get(key(ringI, 'c', runI)) ?? -1
+        const end = slot.get(key(ringI, 'c', (runI + 1) % corners.length)) ?? -1
+        let prev = start
+        for (let k = 1; k < run.steps; k += 1) {
+          const cur = slot.get(key(ringI, 'i', runI, k)) ?? -1
+          if (cur < 0) continue
+          linkAlong(prev, cur)
+          prev = cur
+        }
+        linkAlong(prev, end)
+      })
+    })
+
+    if (!mountain) return
+    for (let ringI = 1; ringI < offsets.length; ringI += 1) {
+      runs.forEach((run, runI) => {
+        if (sparse && run.steps < 8) return
+        for (let k = 1; k < run.steps; k += 1) {
+          if (k < 3 || k > run.steps - 3) continue
+          if (sparse) {
+            if (k !== Math.round(run.steps / 2)) continue
+          } else if (ringI === 1 ? k % 4 !== 0 : k % 4 !== 2) continue
+          const a = slot.get(key(ringI, 'i', runI, k)) ?? -1
+          const b = slot.get(key(ringI - 1, 'i', runI, k)) ?? -1
+          if (rungOk(a, b)) links.push([a, b])
+        }
       })
     }
+
   })
 
   paths.forEach((path, index) => {
@@ -394,6 +652,9 @@ const sampleLogoRibbons = () => {
 
   return { points, links }
 }
+
+
+
 
 const toCanvasAnchors = (points: { x: number; y: number }[], canvasBounds: DOMRect) => {
   const svg = document.querySelector<SVGSVGElement>('.hero-logo')
@@ -563,7 +824,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || reducedMotion) return
-    const gpu = tryAetherGpu(canvas)
+    const gpu = new URLSearchParams(window.location.search).get('aether') === '2d'
+      ? null
+      : tryAetherGpu(canvas)
+
     const ctx = gpu ? null : canvas.getContext('2d')
     if (!gpu && !ctx) return
 
@@ -702,7 +966,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         }
       }
       if (logoShape.length === 0) {
-        const sampled = sampleLogoRibbons()
+        const sampled = sampleLogoRibbons(!gpu)
+
         logoShape = sampled.points
         logoLinks = sampled.links
       }
@@ -750,7 +1015,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
       halos = readHalos(bounds)
       keepouts = readKeepouts(bounds)
-      const count = Math.min(180, Math.max(80, Math.floor((worldW * worldH) / 18000)))
+      const count = unboundCap(worldW * worldH, Boolean(gpu))
+
       for (let i = 0; i < count; i += 1) {
         let x = Math.random() * worldW
         let y = Math.random() * worldH
@@ -864,7 +1130,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const update = (particle: Particle) => {
       if (particle.x > worldW || particle.x < 0) particle.directionX *= -1
 
-      if (mouse.x !== null && mouse.y !== null && (!particle.bound || assembled)) {
+      if (mouse.x !== null && mouse.y !== null && (!particle.bound || (assembled && gpu))) {
+
         const dx = mouse.x - particle.x
         const dy = mouse.y - particle.y
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -945,7 +1212,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         return Math.max(0, Math.min(1, 1 - dist / 70))
       }
       if (logoOnScreen) {
-        const near = mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+        const near = Boolean(gpu) && mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+
         if (gpu) {
           for (const [i, j] of logoLinks) {
             const left = boundList[i]
@@ -1226,7 +1494,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         ctx.setTransform(1, 0, 0, 1, -camX, -camY)
       }
       if (logoOnScreen) {
-        const near = mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+        const near = Boolean(gpu) && mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+
         if (near) idleLinkPath = null
         if (!gpu && assembled && !near) {
           if (!idleLinkPath) rebuildLogoCaches()

@@ -534,7 +534,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         MAX_TAGS,
         Math.max(4, Math.round((canvas.height / Math.max(window.innerHeight, 1)) * 1.2)),
       )
-      let minGap = Math.max(220, canvas.height / (target * 1.35))
+      const minGap = Math.max(220, canvas.height / (target * 1.35))
       const pick = (gap: number) => {
         const chosen: Particle[] = []
         let lastY = -gap

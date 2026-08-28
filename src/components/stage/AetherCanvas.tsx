@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { User } from 'lucide-react'
+import { tryAetherGpu } from './aetherGpu'
+
 
 type Props = {
   reducedMotion: boolean
@@ -106,6 +108,171 @@ export const sleeveTone = (shown: number, target: number): SleeveTone => {
   if (delta <= 2) return 'near'
   return 'off'
 }
+
+export const fillIdleDots = (
+  ctx: CanvasRenderingContext2D,
+  dots: Array<{ x: number; y: number; size: number }>,
+) => {
+  if (dots.length === 0) return
+  ctx.beginPath()
+  for (const dot of dots) {
+    ctx.moveTo(dot.x + dot.size, dot.y)
+    ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2)
+  }
+  ctx.fillStyle = 'rgba(131, 169, 204, 0.72)'
+  ctx.fill()
+}
+
+export const strokeIdleLinks = (
+  ctx: CanvasRenderingContext2D,
+  links: Array<{ x1: number; y1: number; x2: number; y2: number }>,
+) => {
+  if (links.length === 0) return
+  ctx.beginPath()
+  for (const link of links) {
+    ctx.moveTo(link.x1, link.y1)
+    ctx.lineTo(link.x2, link.y2)
+  }
+  ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+
+export const mouseNearMark = (
+  mx: number | null,
+  my: number | null,
+  radius: number,
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+) => {
+  if (mx === null || my === null) return false
+  return mx >= bounds.minX - radius && mx <= bounds.maxX + radius
+    && my >= bounds.minY - radius && my <= bounds.maxY + radius
+}
+
+export const buildIdleLinkPath = (
+  bound: Array<{ home: { x: number; y: number } | null }>,
+  links: Array<[number, number]>,
+) => {
+  const path = new Path2D()
+  for (const [i, j] of links) {
+    const left = bound[i]?.home
+    const right = bound[j]?.home
+    if (!left || !right) continue
+    path.moveTo(left.x, left.y)
+    path.lineTo(right.x, right.y)
+  }
+  return path
+}
+
+export const strokeIdlePath = (ctx: CanvasRenderingContext2D, path: Path2D) => {
+  ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
+  ctx.lineWidth = 1
+  ctx.stroke(path)
+}
+
+export const shimmerAlong = (
+  x: number,
+  y: number,
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+) => {
+  const spanX = Math.max(1, bounds.maxX - bounds.minX)
+  const spanY = Math.max(1, bounds.maxY - bounds.minY)
+  return ((x - bounds.minX) / spanX) * 0.68 + ((y - bounds.minY) / spanY) * 0.32
+}
+
+export const blockHitsShimmer = (alongMin: number, alongMax: number, pos: number) =>
+  alongMin <= pos + 0.13 && alongMax >= pos - 0.13
+
+export const mergeDotBlocks = (
+  dots: Array<{ x: number; y: number; size: number; along: number }>,
+) => {
+  const n = dots.length
+  const parent = Array.from({ length: n }, (_, i) => i)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+  for (let i = 0; i < n; i += 1) {
+    for (let j = i + 1; j < n; j += 1) {
+      const dx = dots[i].x - dots[j].x
+      const dy = dots[i].y - dots[j].y
+      const r = dots[i].size + dots[j].size
+      if (dx * dx + dy * dy >= r * r) continue
+      let a = find(i)
+      let b = find(j)
+      if (a !== b) parent[b] = a
+    }
+  }
+  const groups = new Map<number, number[]>()
+  for (let i = 0; i < n; i += 1) {
+    const root = find(i)
+    const list = groups.get(root)
+    if (list) list.push(i)
+    else groups.set(root, [i])
+  }
+  const blocks = [...groups.values()].map((indices) => {
+    indices.sort((a, b) => a - b)
+    let alongMin = dots[indices[0]].along
+    let alongMax = alongMin
+    for (const i of indices) {
+      alongMin = Math.min(alongMin, dots[i].along)
+      alongMax = Math.max(alongMax, dots[i].along)
+    }
+    return { indices, alongMin, alongMax }
+  })
+  blocks.sort((a, b) => a.alongMin - b.alongMin || a.indices[0] - b.indices[0])
+  const packed: typeof blocks = []
+  for (const block of blocks) {
+    const last = packed[packed.length - 1]
+    if (last && block.alongMax - last.alongMin <= 0.13) {
+      last.indices.push(...block.indices)
+      last.alongMin = Math.min(last.alongMin, block.alongMin)
+      last.alongMax = Math.max(last.alongMax, block.alongMax)
+    } else {
+      packed.push({
+        indices: [...block.indices],
+        alongMin: block.alongMin,
+        alongMax: block.alongMax,
+      })
+    }
+  }
+  return packed
+
+}
+
+export const unboundLinkPairs = (
+  points: Array<{ x: number; y: number }>,
+  cell: number,
+  maxDist2: number,
+) => {
+  const buckets = new Map<string, number[]>()
+  for (let i = 0; i < points.length; i += 1) {
+    const k = `${Math.floor(points[i].x / cell)},${Math.floor(points[i].y / cell)}`
+    const bucket = buckets.get(k)
+    if (bucket) bucket.push(i)
+    else buckets.set(k, [i])
+  }
+  const pairs: Array<[number, number]> = []
+  for (let i = 0; i < points.length; i += 1) {
+    const ix = Math.floor(points[i].x / cell)
+    const iy = Math.floor(points[i].y / cell)
+    for (let ox = -1; ox <= 1; ox += 1) {
+      for (let oy = -1; oy <= 1; oy += 1) {
+        const bucket = buckets.get(`${ix + ox},${iy + oy}`)
+        if (!bucket) continue
+        for (const j of bucket) {
+          if (j <= i) continue
+          const dx = points[i].x - points[j].x
+          const dy = points[i].y - points[j].y
+          if (dx * dx + dy * dy >= maxDist2) continue
+          pairs.push([i, j])
+        }
+      }
+    }
+  }
+  pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1])
+  return pairs
+}
+
+
+
 
 const between = (min: number, max: number) => min + Math.random() * (max - min)
 
@@ -396,8 +563,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || reducedMotion) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const gpu = tryAetherGpu(canvas)
+    const ctx = gpu ? null : canvas.getContext('2d')
+    if (!gpu && !ctx) return
+
 
     const mouse = { x: null as number | null, y: null as number | null, radius: 200 }
     let particles: Particle[] = []
@@ -423,6 +592,46 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const boundList: Particle[] = []
     const onScreen = new Set<Particle>()
     const shimmerCache = new Map<Particle, number>()
+    const idleDots: Array<{ x: number; y: number; size: number }> = []
+    let idleLinkPath: Path2D | null = null
+    let dotBlocks: Array<{ alongMin: number; alongMax: number; path: Path2D; particles: Particle[] }> = []
+    let perLinkPaths: Path2D[] = []
+    const rebuildLogoCaches = () => {
+      idleLinkPath = buildIdleLinkPath(boundList, logoLinks)
+      const dots = boundList.map((particle) => {
+        const home = particle.home ?? { x: particle.x, y: particle.y }
+        return {
+          x: home.x,
+          y: home.y,
+          size: particle.size,
+          along: shimmerAlong(home.x, home.y, logoBounds),
+        }
+      })
+      dotBlocks = mergeDotBlocks(dots).map((block) => {
+        const path = new Path2D()
+        const particles: Particle[] = []
+        for (const i of block.indices) {
+          const dot = dots[i]
+          path.moveTo(dot.x + dot.size, dot.y)
+          path.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2)
+          particles.push(boundList[i])
+        }
+        return { alongMin: block.alongMin, alongMax: block.alongMax, path, particles }
+      })
+      perLinkPaths = logoLinks.map(([i, j]) => {
+        const path = new Path2D()
+        const left = boundList[i]?.home
+        const right = boundList[j]?.home
+        if (left && right) {
+          path.moveTo(left.x, left.y)
+          path.lineTo(right.x, right.y)
+        }
+        return path
+      })
+    }
+
+
+
     const reindex = () => {
       unbound.length = 0
       boundList.length = 0
@@ -430,6 +639,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         if (particle.bound) boundList.push(particle)
         else unbound.push(particle)
       }
+      idleLinkPath = null
+
     }
 
 
@@ -508,10 +719,11 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       if (!seeded && heroAnchors.length > 24) {
         seedNearAnchors()
         seeded = true
-      } else if (seeded && heroAnchors.length) {
+      } else if (seeded && heroAnchors.length && !assembled) {
         boundList.forEach((particle, index) => {
           particle.home = heroAnchors[index] ?? heroAnchors[index % heroAnchors.length]
         })
+
 
       }
       panes = [...document.querySelectorAll<HTMLElement>('.product-surface')].map((node) => {
@@ -614,15 +826,40 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
     const draw = (particle: Particle) => {
       const glow = particle.bound ? shimmerOf(particle) : 0
-
       const tagged = Boolean(particle.tag)
+      const r = tagged ? 210 : 131 + 110 * glow
+      const g = tagged ? 228 : 169 + 72 * glow
+      const b = tagged ? 246 : 204 + 51 * glow
+      const a = tagged ? 0.95 : 0.72 + 0.28 * glow
+      const size = particle.size * (1 + glow * 0.45)
+      if (gpu) {
+        gpu.dot(particle.x, particle.y, size, r / 255, g / 255, b / 255, a)
+        return
+      }
+      if (!ctx) return
       ctx.beginPath()
-      ctx.arc(particle.x, particle.y, particle.size * (1 + glow * 0.45), 0, Math.PI * 2)
-      ctx.fillStyle = tagged
-        ? 'rgba(210, 228, 246, 0.95)'
-        : `rgba(${Math.round(131 + 110 * glow)}, ${Math.round(169 + 72 * glow)}, ${Math.round(204 + 51 * glow)}, ${0.72 + 0.28 * glow})`
+      ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`
       ctx.fill()
     }
+
+    const paintLine = (
+      x1: number, y1: number, x2: number, y2: number,
+      r: number, g: number, b: number, a: number, width: number,
+    ) => {
+      if (gpu) {
+        gpu.line(x1, y1, x2, y2, r / 255, g / 255, b / 255, a, width)
+        return
+      }
+      if (!ctx) return
+      ctx.strokeStyle = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`
+      ctx.lineWidth = width
+      ctx.beginPath()
+      ctx.moveTo(x1, y1)
+      ctx.lineTo(x2, y2)
+      ctx.stroke()
+    }
+
 
     const update = (particle: Particle) => {
       if (particle.x > worldW || particle.x < 0) particle.directionX *= -1
@@ -686,8 +923,9 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         steerFromRects(particle, keepouts)
       }
       const show = inFrame(particle.x, particle.y)
-      if (show) draw(particle)
+      if (show && !particle.bound) draw(particle)
       return show
+
     }
 
 
@@ -707,27 +945,91 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         return Math.max(0, Math.min(1, 1 - dist / 70))
       }
       if (logoOnScreen) {
-        for (const [i, j] of logoLinks) {
-          const left = boundList[i]
-          const right = boundList[j]
-          if (!left || !right) continue
-          if (!onScreen.has(left) && !onScreen.has(right)) continue
-          const alpha = settle(left) * settle(right)
-          if (alpha < 0.08) continue
-          const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
-          ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${(0.42 + 0.46 * glow) * alpha})`
-          ctx.lineWidth = 1 + glow * 0.8
+        const near = mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+        if (gpu) {
+          for (const [i, j] of logoLinks) {
+            const left = boundList[i]
+            const right = boundList[j]
+            if (!left || !right) continue
+            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+            const alpha = assembled ? 1 : settle(left) * settle(right)
+            if (alpha < 0.08) continue
+            paintLine(
+              left.x, left.y, right.x, right.y,
+              91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
+              (0.42 + 0.46 * glow) * alpha,
+              1 + glow * 0.8,
+            )
+          }
+        } else if (assembled && !near) {
+          if (!idleLinkPath) rebuildLogoCaches()
+          if (idleLinkPath && ctx) strokeIdlePath(ctx, idleLinkPath)
+          for (const [index, [i, j]] of logoLinks.entries()) {
+            const left = boundList[i]
+            const right = boundList[j]
+            if (!left || !right || !ctx) continue
+            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+            if (glow === 0) continue
+            ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${0.42 + 0.46 * glow})`
+            ctx.lineWidth = 1 + glow * 0.8
+            ctx.stroke(perLinkPaths[index])
+          }
+        } else if (assembled && ctx) {
           ctx.beginPath()
-          ctx.moveTo(left.x, left.y)
-          ctx.lineTo(right.x, right.y)
+          for (const [i, j] of logoLinks) {
+            const left = boundList[i]
+            const right = boundList[j]
+            if (!left || !right) continue
+            if ((shimmerOf(left) + shimmerOf(right)) * 0.5 !== 0) continue
+            ctx.moveTo(left.x, left.y)
+            ctx.lineTo(right.x, right.y)
+          }
+          ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
+          ctx.lineWidth = 1
           ctx.stroke()
+          for (const [i, j] of logoLinks) {
+            const left = boundList[i]
+            const right = boundList[j]
+            if (!left || !right) continue
+            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+            if (glow === 0) continue
+            paintLine(
+              left.x, left.y, right.x, right.y,
+              91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
+              0.42 + 0.46 * glow,
+              1 + glow * 0.8,
+            )
+          }
+        } else {
+          for (const [i, j] of logoLinks) {
+            const left = boundList[i]
+            const right = boundList[j]
+            if (!left || !right) continue
+            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+            const alpha = settle(left) * settle(right)
+            if (alpha < 0.08) continue
+            paintLine(
+              left.x, left.y, right.x, right.y,
+              91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
+              (0.42 + 0.46 * glow) * alpha,
+              1 + glow * 0.8,
+            )
+          }
         }
       }
+
+
+
+
+
+      const pairs = unboundLinkPairs(unbound, Math.sqrt(18000), 18000)
+      let pairAt = 0
       for (let a = 0; a < unbound.length; a += 1) {
         const pa = unbound[a]
         const aShow = onScreen.has(pa)
-        for (let b = a + 1; b < unbound.length; b += 1) {
-          const pb = unbound[b]
+        while (pairAt < pairs.length && pairs[pairAt][0] === a) {
+          const pb = unbound[pairs[pairAt][1]]
+          pairAt += 1
           if (!aShow && !onScreen.has(pb)) continue
           const dx = pa.x - pb.x
           const dy = pa.y - pb.y
@@ -737,14 +1039,11 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             if (crossesHalo(pa.x, pa.y, pb.x, pb.y)) continue
             if (crossesKeepout(pa.x, pa.y, pb.x, pb.y)) continue
             const opacity = 1 - distance / 18000
-            ctx.strokeStyle = `rgba(91, 141, 239, ${opacity * 0.45})`
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(pa.x, pa.y)
-            ctx.lineTo(pb.x, pb.y)
-            ctx.stroke()
+            paintLine(pa.x, pa.y, pb.x, pb.y, 91, 141, 239, opacity * 0.45, 1)
+
           }
         }
+
         for (const anchor of titleAnchors) {
           if (!aShow && !inFrame(anchor.x, anchor.y)) continue
           const dx = pa.x - anchor.x
@@ -754,12 +1053,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             if (blocked(pa.x, pa.y, anchor.x, anchor.y)) continue
             if (crossesHalo(pa.x, pa.y, anchor.x, anchor.y)) continue
             if (crossesKeepout(pa.x, pa.y, anchor.x, anchor.y)) continue
-            ctx.strokeStyle = `rgba(131, 169, 204, ${0.4 * (1 - distance / 24000)})`
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(pa.x, pa.y)
-            ctx.lineTo(anchor.x, anchor.y)
-            ctx.stroke()
+            paintLine(pa.x, pa.y, anchor.x, anchor.y, 131, 169, 204, 0.4 * (1 - distance / 24000), 1)
+
           }
         }
       }
@@ -923,14 +1218,71 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         && logoBounds.maxX >= camX - 160 && logoBounds.minX <= camX + canvas.width + 160
       onScreen.clear()
       shimmerCache.clear()
-      ctx.setTransform(1, 0, 0, 1, 0, 0)
-      ctx.fillStyle = '#07090d'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.setTransform(1, 0, 0, 1, -camX, -camY)
+      if (gpu) gpu.begin(canvas.width, canvas.height, camX, camY)
+      else if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.fillStyle = '#07090d'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.setTransform(1, 0, 0, 1, -camX, -camY)
+      }
       if (logoOnScreen) {
-        for (const particle of boundList) {
-          if (update(particle)) onScreen.add(particle)
+        const near = mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
+        if (near) idleLinkPath = null
+        if (!gpu && assembled && !near) {
+          if (!idleLinkPath) rebuildLogoCaches()
+          for (const particle of boundList) {
+            if (particle.home) {
+              particle.x = particle.home.x
+              particle.y = particle.home.y
+            }
+          }
+          const elapsed = (performance.now() - seedTime) / 1000 - 2.4
+          const pos = elapsed < 0 ? -1e9 : ((elapsed % 5.6) / 5.6) * 1.55 - 0.22
+          for (const block of dotBlocks) {
+            if (elapsed >= 0 && blockHitsShimmer(block.alongMin, block.alongMax, pos)) {
+              for (const particle of block.particles) draw(particle)
+            } else if (ctx) {
+              ctx.fillStyle = 'rgba(131, 169, 204, 0.72)'
+              ctx.fill(block.path)
+            }
+          }
+        } else {
+          idleDots.length = 0
+          for (const particle of boundList) {
+            if (assembled) {
+              if (near && mouse.x !== null && mouse.y !== null) {
+                const dx = mouse.x - particle.x
+                const dy = mouse.y - particle.y
+                const distance = Math.sqrt(dx * dx + dy * dy)
+                if (distance < mouse.radius + particle.size && distance > 0) {
+                  const force = (mouse.radius - distance) / mouse.radius
+                  particle.x += -(dx / distance) * force * 5
+                  particle.y += -(dy / distance) * force * 5
+                }
+                if (particle.home) {
+                  particle.x += (particle.home.x - particle.x) * 0.12
+                  particle.y += (particle.home.y - particle.y) * 0.12
+                }
+              } else if (particle.home) {
+                particle.x = particle.home.x
+                particle.y = particle.home.y
+              }
+            } else {
+              update(particle)
+            }
+            if (gpu) draw(particle)
+            else {
+              const glow = shimmerOf(particle)
+              if (glow === 0) idleDots.push(particle)
+              else draw(particle)
+            }
+          }
+          if (ctx) fillIdleDots(ctx, idleDots)
         }
+
+
+
+
       } else {
         for (const particle of boundList) {
           if (particle.home) {
@@ -943,7 +1295,9 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         if (update(particle)) onScreen.add(particle)
       }
       connect(logoOnScreen)
+      if (gpu) gpu.flush()
       placeTags()
+
     }
 
 

@@ -409,6 +409,30 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     let halos: Halo[] = []
     let keepouts: Pane[] = []
     let frame = 0
+    let worldW = 0
+    let worldH = 0
+    let camX = 0
+    let camY = 0
+    const field = canvas.parentElement
+    const worldBounds = () => (field ?? canvas).getBoundingClientRect()
+    const inFrame = (x: number, y: number) => (
+      x >= camX - 160 && x <= camX + canvas.width + 160
+      && y >= camY - 160 && y <= camY + canvas.height + 160
+    )
+    const unbound: Particle[] = []
+    const boundList: Particle[] = []
+    const onScreen = new Set<Particle>()
+    const shimmerCache = new Map<Particle, number>()
+    const reindex = () => {
+      unbound.length = 0
+      boundList.length = 0
+      for (const particle of particles) {
+        if (particle.bound) boundList.push(particle)
+        else unbound.push(particle)
+      }
+    }
+
+
     let tick = 0
     let seeded = false
     let assembled = false
@@ -452,10 +476,13 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           tag: null,
         })
       }
+      reindex()
+
     }
 
     const readScene = () => {
-      const canvasBounds = canvas.getBoundingClientRect()
+      const canvasBounds = worldBounds()
+
       const toAnchor = (node: HTMLElement) => {
         const rect = node.getBoundingClientRect()
         return {
@@ -482,10 +509,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         seedNearAnchors()
         seeded = true
       } else if (seeded && heroAnchors.length) {
-        const boundParticles = particles.filter((particle) => particle.bound)
-        boundParticles.forEach((particle, index) => {
+        boundList.forEach((particle, index) => {
           particle.home = heroAnchors[index] ?? heroAnchors[index % heroAnchors.length]
         })
+
       }
       panes = [...document.querySelectorAll<HTMLElement>('.product-surface')].map((node) => {
         const rect = node.getBoundingClientRect()
@@ -507,17 +534,19 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
     const init = () => {
       particles = []
-      const bounds = canvas.getBoundingClientRect()
+      const bounds = worldBounds()
+
       halos = readHalos(bounds)
       keepouts = readKeepouts(bounds)
-      const count = Math.min(180, Math.max(80, Math.floor((canvas.width * canvas.height) / 18000)))
+      const count = Math.min(180, Math.max(80, Math.floor((worldW * worldH) / 18000)))
       for (let i = 0; i < count; i += 1) {
-        let x = Math.random() * canvas.width
-        let y = Math.random() * canvas.height
+        let x = Math.random() * worldW
+        let y = Math.random() * worldH
         for (let attempt = 0; attempt < 8 && !outsideKeepout(x, y); attempt += 1) {
-          x = Math.random() * canvas.width
-          y = Math.random() * canvas.height
+          x = Math.random() * worldW
+          y = Math.random() * worldH
         }
+
         particles.push({
           x,
           y,
@@ -532,9 +561,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       }
       const target = Math.min(
         MAX_TAGS,
-        Math.max(4, Math.round((canvas.height / Math.max(window.innerHeight, 1)) * 1.2)),
+        Math.max(4, Math.round((worldH / Math.max(window.innerHeight, 1)) * 1.2)),
       )
-      const minGap = Math.max(220, canvas.height / (target * 1.35))
+      const minGap = Math.max(220, worldH / (target * 1.35))
+
       const pick = (gap: number) => {
         const chosen: Particle[] = []
         let lastY = -gap
@@ -556,18 +586,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         particle.tag = makeTag(TAG_KINDS[index % TAG_KINDS.length], names[index % names.length])
         particle.size = Math.max(particle.size, 2.3)
       })
+      reindex()
+
     }
 
-    const resize = () => {
-      const parent = canvas.parentElement
-      canvas.width = parent?.clientWidth ?? window.innerWidth
-      canvas.height = parent?.clientHeight ?? window.innerHeight
-      logoShape = []
-      logoLinks = []
-      init()
-      seeded = false
-      readScene()
-    }
 
     const shimmerAt = (x: number, y: number) => {
       if (!assembled) return 0
@@ -581,9 +603,18 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       const falloff = Math.max(0, 1 - Math.abs(along - pos) / 0.13)
       return falloff * falloff
     }
+    const shimmerOf = (particle: Particle) => {
+      const cached = shimmerCache.get(particle)
+      if (cached !== undefined) return cached
+      const value = shimmerAt(particle.x, particle.y)
+      shimmerCache.set(particle, value)
+      return value
+    }
+
 
     const draw = (particle: Particle) => {
-      const glow = particle.bound ? shimmerAt(particle.x, particle.y) : 0
+      const glow = particle.bound ? shimmerOf(particle) : 0
+
       const tagged = Boolean(particle.tag)
       ctx.beginPath()
       ctx.arc(particle.x, particle.y, particle.size * (1 + glow * 0.45), 0, Math.PI * 2)
@@ -594,7 +625,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     }
 
     const update = (particle: Particle) => {
-      if (particle.x > canvas.width || particle.x < 0) particle.directionX *= -1
+      if (particle.x > worldW || particle.x < 0) particle.directionX *= -1
+
       if (mouse.x !== null && mouse.y !== null && (!particle.bound || assembled)) {
         const dx = mouse.x - particle.x
         const dy = mouse.y - particle.y
@@ -620,6 +652,12 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         }
       }
       if (particle.bound && particle.home) {
+        if (!inFrame(particle.home.x, particle.home.y)) {
+          particle.x = particle.home.x
+          particle.y = particle.home.y
+          return false
+
+        }
         const elapsed = Math.max(0, (performance.now() - seedTime) / 1000 - particle.delay)
         const pull = elapsed <= 0 ? 0 : 1 - Math.exp(-elapsed * 3.4)
         particle.x += (particle.home.x - particle.x) * (0.03 + pull * 0.09)
@@ -627,6 +665,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         particle.directionX *= 0.94
         particle.directionY *= 0.94
       } else {
+
         for (const anchor of titleAnchors) {
           const ax = anchor.x - particle.x
           const ay = anchor.y - particle.y
@@ -640,13 +679,17 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       particle.x += particle.directionX
       particle.y += particle.directionY
       if (!particle.bound) {
-        if (particle.y > canvas.height) particle.y = 0
-        if (particle.y < 0) particle.y = canvas.height
+        if (particle.y > worldH) particle.y = 0
+        if (particle.y < 0) particle.y = worldH
+
         steerFromHalos(particle, halos)
         steerFromRects(particle, keepouts)
       }
-      draw(particle)
+      const show = inFrame(particle.x, particle.y)
+      if (show) draw(particle)
+      return show
     }
+
 
     const blocked = (x1: number, y1: number, x2: number, y2: number) =>
       panes.some((pane) => segmentHitsPane(x1, y1, x2, y2, pane))
@@ -657,61 +700,64 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const crossesKeepout = (x1: number, y1: number, x2: number, y2: number) =>
       keepouts.some((pane) => segmentHitsPane(x1, y1, x2, y2, pane))
 
-    const connect = () => {
-      const bound = particles.filter((particle) => particle.bound)
+    const connect = (logoOnScreen: boolean) => {
       const settle = (particle: Particle) => {
         if (!particle.home) return 0
         const dist = Math.hypot(particle.x - particle.home.x, particle.y - particle.home.y)
         return Math.max(0, Math.min(1, 1 - dist / 70))
       }
-      for (const [i, j] of logoLinks) {
-        const left = bound[i]
-        const right = bound[j]
-        if (!left || !right) continue
-        if (blocked(left.x, left.y, right.x, right.y)) continue
-        const alpha = settle(left) * settle(right)
-        if (alpha < 0.08) continue
-        const glow = (shimmerAt(left.x, left.y) + shimmerAt(right.x, right.y)) * 0.5
-        ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${(0.42 + 0.46 * glow) * alpha})`
-        ctx.lineWidth = 1 + glow * 0.8
-        ctx.beginPath()
-        ctx.moveTo(left.x, left.y)
-        ctx.lineTo(right.x, right.y)
-        ctx.stroke()
+      if (logoOnScreen) {
+        for (const [i, j] of logoLinks) {
+          const left = boundList[i]
+          const right = boundList[j]
+          if (!left || !right) continue
+          if (!onScreen.has(left) && !onScreen.has(right)) continue
+          const alpha = settle(left) * settle(right)
+          if (alpha < 0.08) continue
+          const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+          ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${(0.42 + 0.46 * glow) * alpha})`
+          ctx.lineWidth = 1 + glow * 0.8
+          ctx.beginPath()
+          ctx.moveTo(left.x, left.y)
+          ctx.lineTo(right.x, right.y)
+          ctx.stroke()
+        }
       }
-
-      for (let a = 0; a < particles.length; a += 1) {
-        if (particles[a].bound) continue
-        for (let b = a + 1; b < particles.length; b += 1) {
-          if (particles[b].bound) continue
-          const dx = particles[a].x - particles[b].x
-          const dy = particles[a].y - particles[b].y
+      for (let a = 0; a < unbound.length; a += 1) {
+        const pa = unbound[a]
+        const aShow = onScreen.has(pa)
+        for (let b = a + 1; b < unbound.length; b += 1) {
+          const pb = unbound[b]
+          if (!aShow && !onScreen.has(pb)) continue
+          const dx = pa.x - pb.x
+          const dy = pa.y - pb.y
           const distance = dx * dx + dy * dy
           if (distance < 18000) {
-            if (blocked(particles[a].x, particles[a].y, particles[b].x, particles[b].y)) continue
-            if (crossesHalo(particles[a].x, particles[a].y, particles[b].x, particles[b].y)) continue
-            if (crossesKeepout(particles[a].x, particles[a].y, particles[b].x, particles[b].y)) continue
+            if (blocked(pa.x, pa.y, pb.x, pb.y)) continue
+            if (crossesHalo(pa.x, pa.y, pb.x, pb.y)) continue
+            if (crossesKeepout(pa.x, pa.y, pb.x, pb.y)) continue
             const opacity = 1 - distance / 18000
             ctx.strokeStyle = `rgba(91, 141, 239, ${opacity * 0.45})`
             ctx.lineWidth = 1
             ctx.beginPath()
-            ctx.moveTo(particles[a].x, particles[a].y)
-            ctx.lineTo(particles[b].x, particles[b].y)
+            ctx.moveTo(pa.x, pa.y)
+            ctx.lineTo(pb.x, pb.y)
             ctx.stroke()
           }
         }
         for (const anchor of titleAnchors) {
-          const dx = particles[a].x - anchor.x
-          const dy = particles[a].y - anchor.y
+          if (!aShow && !inFrame(anchor.x, anchor.y)) continue
+          const dx = pa.x - anchor.x
+          const dy = pa.y - anchor.y
           const distance = dx * dx + dy * dy
           if (distance < 24000) {
-            if (blocked(particles[a].x, particles[a].y, anchor.x, anchor.y)) continue
-            if (crossesHalo(particles[a].x, particles[a].y, anchor.x, anchor.y)) continue
-            if (crossesKeepout(particles[a].x, particles[a].y, anchor.x, anchor.y)) continue
+            if (blocked(pa.x, pa.y, anchor.x, anchor.y)) continue
+            if (crossesHalo(pa.x, pa.y, anchor.x, anchor.y)) continue
+            if (crossesKeepout(pa.x, pa.y, anchor.x, anchor.y)) continue
             ctx.strokeStyle = `rgba(131, 169, 204, ${0.4 * (1 - distance / 24000)})`
             ctx.lineWidth = 1
             ctx.beginPath()
-            ctx.moveTo(particles[a].x, particles[a].y)
+            ctx.moveTo(pa.x, pa.y)
             ctx.lineTo(anchor.x, anchor.y)
             ctx.stroke()
           }
@@ -719,12 +765,14 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       }
     }
 
+
     const placeTags = () => {
       const root = tagsRef.current
       if (!root) return
       const nodes = [...root.querySelectorAll<HTMLElement>('.aether-tag')]
       const tagged = particles.filter((particle) => particle.tag && !particle.bound)
-      const canvasTop = canvas.getBoundingClientRect().top
+      const canvasTop = worldBounds().top
+
       const now = performance.now()
       const pending: { key: string; x: number; y: number }[] = []
 
@@ -735,9 +783,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           return
         }
         const hidden = particle.y < 8
-          || particle.y > canvas.height - 8
+          || particle.y > worldH - 8
           || particle.x < 8
-          || particle.x > canvas.width - 8
+          || particle.x > worldW - 8
+
           || panes.some((pane) => isInside(particle.x, particle.y, pane, 10))
         const key = `${particle.tag.kind}-${particle.tag.name}-${index}`
         const play = tagPlay.get(key) ?? {
@@ -859,19 +908,48 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     }
 
     const animate = () => {
+      if (document.hidden) {
+        frame = 0
+        return
+      }
       frame = requestAnimationFrame(animate)
       tick += 1
       if (tick % 8 === 0) readScene()
       if (!assembled && seeded && performance.now() - seedTime > 2400) assembled = true
+      camX = window.scrollX
+      camY = window.scrollY
+      const logoOnScreen =
+        logoBounds.maxY >= camY - 160 && logoBounds.minY <= camY + canvas.height + 160
+        && logoBounds.maxX >= camX - 160 && logoBounds.minX <= camX + canvas.width + 160
+      onScreen.clear()
+      shimmerCache.clear()
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.fillStyle = '#07090d'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      particles.forEach(update)
-      connect()
+      ctx.setTransform(1, 0, 0, 1, -camX, -camY)
+      if (logoOnScreen) {
+        for (const particle of boundList) {
+          if (update(particle)) onScreen.add(particle)
+        }
+      } else {
+        for (const particle of boundList) {
+          if (particle.home) {
+            particle.x = particle.home.x
+            particle.y = particle.home.y
+          }
+        }
+      }
+      for (const particle of unbound) {
+        if (update(particle)) onScreen.add(particle)
+      }
+      connect(logoOnScreen)
       placeTags()
     }
 
+
     const onMove = (event: MouseEvent) => {
-      const bounds = canvas.getBoundingClientRect()
+      const bounds = worldBounds()
+
       mouse.x = event.clientX - bounds.left
       mouse.y = event.clientY - bounds.top
     }
@@ -882,15 +960,31 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
     let lastW = 0
     let lastH = 0
+    let lastViewW = 0
+    let lastViewH = 0
     const applySize = () => {
-      const parent = canvas.parentElement
-      const width = parent?.clientWidth ?? window.innerWidth
-      const height = parent?.clientHeight ?? window.innerHeight
-      if (width === lastW && height === lastH) return
+      const width = field?.clientWidth ?? window.innerWidth
+      const height = field?.clientHeight ?? window.innerHeight
+      const viewW = window.innerWidth
+      const viewH = window.innerHeight
+      if (width === lastW && height === lastH && viewW === lastViewW && viewH === lastViewH) return
+      const worldChanged = width !== lastW || height !== lastH
       lastW = width
       lastH = height
-      resize()
+      lastViewW = viewW
+      lastViewH = viewH
+      worldW = width
+      worldH = height
+      canvas.width = viewW
+      canvas.height = viewH
+      if (!worldChanged && particles.length) return
+      logoShape = []
+      logoLinks = []
+      init()
+      seeded = false
+      readScene()
     }
+
     applySize()
     animate()
     const resizeObserver = new ResizeObserver(applySize)
@@ -898,13 +992,25 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     window.addEventListener('resize', applySize)
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseout', onOut)
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (frame) cancelAnimationFrame(frame)
+        frame = 0
+        return
+      }
+      if (!frame) animate()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       resizeObserver.disconnect()
       window.removeEventListener('resize', applySize)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseout', onOut)
+      document.removeEventListener('visibilitychange', onVisibility)
       cancelAnimationFrame(frame)
     }
+
   }, [reducedMotion])
 
   return (

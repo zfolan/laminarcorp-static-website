@@ -8,6 +8,14 @@ import { StagePage } from './StagePage'
 afterEach(() => {
   vi.restoreAllMocks()
   vi.useRealTimers()
+  vi.unstubAllGlobals()
+  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(() => null),
+  })
+
+
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
 })
 
@@ -44,6 +52,96 @@ describe('StagePage', () => {
     const field = document.querySelector('[data-aether-field]')
     expect(field).toHaveAttribute('aria-hidden', 'true')
   })
+
+  it('backs the aether canvas with the viewport, not the page height', () => {
+    const ctx = {
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      fillRect: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      setTransform: vi.fn(),
+
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D)
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-aether-field') ? 1440 : 100
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-aether-field') ? 5870 : 100
+    })
+    const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    Object.defineProperty(Object.getPrototypeOf(svgPath), 'getTotalLength', {
+      configurable: true,
+      value: () => 0,
+    })
+    Object.defineProperty(Object.getPrototypeOf(svgPath.ownerSVGElement ?? document.createElementNS('http://www.w3.org/2000/svg', 'svg')), 'getScreenCTM', {
+      configurable: true,
+      value: () => null,
+    })
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+
+
+
+    renderStage()
+    const canvas = document.querySelector('[data-aether-field] canvas')
+    expect(canvas).toBeTruthy()
+    expect(canvas).toHaveProperty('width', 1440)
+    expect(canvas).toHaveProperty('height', 900)
+  })
+
+  it('stops the aether loop while the document is hidden', () => {
+    const ctx = {
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      fillRect: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      setTransform: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D)
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    const cancel = vi.fn()
+    vi.stubGlobal('cancelAnimationFrame', cancel)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-aether-field') ? 1440 : 100
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-aether-field') ? 5870 : 100
+    })
+    const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    Object.defineProperty(Object.getPrototypeOf(svgPath), 'getTotalLength', {
+      configurable: true,
+      value: () => 0,
+    })
+    Object.defineProperty(Object.getPrototypeOf(svgPath.ownerSVGElement ?? document.createElementNS('http://www.w3.org/2000/svg', 'svg')), 'getScreenCTM', {
+      configurable: true,
+      value: () => null,
+    })
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+
+    renderStage()
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(cancel).toHaveBeenCalled()
+  })
+
+
 
   it('keeps product sections in the page without hero shortcuts', () => {
     renderStage()

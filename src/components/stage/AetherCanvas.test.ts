@@ -220,7 +220,8 @@ describe('chordNearFill', () => {
   })
 
   it('drops a chord through empty space', () => {
-    expect(chordNearFill(0, 0, 40, 0, (x, y) => x <= 2 || x >= 38)).toBe(false)
+    expect(chordNearFill(0, 0, 40, 0, (x) => x <= 2 || x >= 38)).toBe(false)
+
   })
 })
 

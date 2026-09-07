@@ -59,7 +59,9 @@
     "must": [],
     "avoid": []
   },
-  "decisions": [],
+  "decisions": [
+    "The interactive hero logo uses one outline per source contour, with a 3px base stroke and no node dots, inset rings, or cross-links. The wave occludes both mountain and base contours with a visible gap. Preserve pointer deformation, shimmer, and the separate background particle field."
+  ],
   "evidence": [
     {
       "fact": "components.installed",

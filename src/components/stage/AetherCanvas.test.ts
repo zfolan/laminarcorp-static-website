@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { blockHitsShimmer, buildIdleLinkPath, chordNearFill, fillIdleDots, lineIntersect, mergeClosePoints, mergeDotBlocks, mouseNearMark, segmentHitsFill, segmentInside, shimmerAlong, sleeveTone, strokeIdleLinks, strokeIdlePath, unboundCap, unboundLinkPairs } from './AetherCanvas'
+import { describe, expect, it } from 'vitest'
+import { chordNearFill, mergeClosePoints, mouseNearMark, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
 
 
 
@@ -11,6 +11,80 @@ import { blockHitsShimmer, buildIdleLinkPath, chordNearFill, fillIdleDots, lineI
 
 
 
+
+describe('logo outline', () => {
+  it('samples one closed contour without inset rings or cross-links', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.classList.add('hero-logo')
+    const path = document.createElementNS(svg.namespaceURI, 'path')
+    Object.assign(path, {
+      getTotalLength: () => 200 * Math.PI,
+      getPointAtLength: (at: number) => ({
+        x: 100 * Math.cos(at / 100),
+        y: 100 * Math.sin(at / 100),
+      }),
+      isPointInFill: ({ x, y }: { x: number; y: number }) => Math.hypot(x, y) <= 100,
+    })
+    svg.append(path)
+    document.body.append(svg)
+    try {
+      for (const sparse of [false, true]) {
+        const { points, links } = sampleLogoOutline(sparse)
+        expect(points.length).toBeGreaterThan(2)
+        for (const point of points) expect(Math.hypot(point.x, point.y)).toBeCloseTo(100)
+        const neighbors = points.map(() => [] as number[])
+        for (const [a, b] of links) {
+          neighbors[a].push(b)
+          neighbors[b].push(a)
+        }
+        for (const adjacent of neighbors) expect(adjacent).toHaveLength(2)
+        const visited = new Set<number>()
+        let current = 0
+        while (!visited.has(current)) {
+          visited.add(current)
+          current = neighbors[current].find((next) => !visited.has(next)) ?? 0
+        }
+        expect(visited.size).toBe(points.length)
+      }
+    } finally {
+      svg.remove()
+    }
+  })
+
+  it('leaves a gap behind the wave without removing the exposed base contour', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.classList.add('hero-logo')
+    const empty = document.createElementNS(svg.namespaceURI, 'path')
+    Object.assign(empty, { getTotalLength: () => 0, isPointInFill: () => false })
+    const base = document.createElementNS(svg.namespaceURI, 'path')
+    Object.assign(base, {
+      getTotalLength: () => 240,
+      getPointAtLength: (at: number) => at <= 100 ? { x: at, y: 0 }
+        : at <= 120 ? { x: 100, y: at - 100 }
+          : at <= 220 ? { x: 220 - at, y: 20 } : { x: 0, y: 240 - at },
+      isPointInFill: ({ x, y }: { x: number; y: number }) => x >= 0 && x <= 100 && y >= 0 && y <= 20,
+    })
+    const wave = document.createElementNS(svg.namespaceURI, 'path')
+    Object.assign(wave, {
+      getTotalLength: () => 0,
+      isPointInFill: ({ x, y }: { x: number; y: number }) => x >= 48 && x <= 52 && Math.abs(y) <= 3,
+      isPointInStroke: ({ x, y }: { x: number; y: number }) => x >= 42 && x <= 58 && Math.abs(y) <= 9,
+    })
+    svg.append(empty, base, wave)
+    document.body.append(svg)
+    try {
+      for (const sparse of [false, true]) {
+        const { points, links } = sampleLogoOutline(sparse)
+        const bottom = links.map(([a, b]) => [points[a], points[b]]).filter(([a, b]) => a.y === 0 || b.y === 0)
+        expect(bottom.some(([a, b]) => Math.max(a.x, b.x) < 42)).toBe(true)
+        expect(bottom.some(([a, b]) => Math.min(a.x, b.x) > 58)).toBe(true)
+        expect(bottom.some(([a, b]) => Math.min(a.x, b.x) <= 58 && Math.max(a.x, b.x) >= 42)).toBe(false)
+      }
+    } finally {
+      svg.remove()
+    }
+  })
+})
 
 describe('sleeveTone', () => {
   it('is green only when displayed current equals target', () => {
@@ -32,45 +106,6 @@ describe('sleeveTone', () => {
   })
 })
 
-describe('idle mesh batching', () => {
-  it('fills every idle dot in one path', () => {
-    const ctx = {
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      arc: vi.fn(),
-      fill: vi.fn(),
-      fillStyle: '',
-    }
-    fillIdleDots(ctx as unknown as CanvasRenderingContext2D, [
-      { x: 0, y: 0, size: 1 },
-      { x: 8, y: 4, size: 2 },
-    ])
-    expect(ctx.beginPath).toHaveBeenCalledTimes(1)
-    expect(ctx.arc).toHaveBeenCalledTimes(2)
-    expect(ctx.fill).toHaveBeenCalledTimes(1)
-    expect(ctx.fillStyle).toBe('rgba(131, 169, 204, 0.72)')
-  })
-
-  it('strokes every idle link in one path', () => {
-    const ctx = {
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
-      strokeStyle: '',
-      lineWidth: 0,
-    }
-    strokeIdleLinks(ctx as unknown as CanvasRenderingContext2D, [
-      { x1: 0, y1: 0, x2: 4, y2: 4 },
-      { x1: 8, y1: 0, x2: 8, y2: 6 },
-    ])
-    expect(ctx.beginPath).toHaveBeenCalledTimes(1)
-    expect(ctx.lineTo).toHaveBeenCalledTimes(2)
-    expect(ctx.stroke).toHaveBeenCalledTimes(1)
-    expect(ctx.strokeStyle).toBe('rgba(91, 141, 239, 0.42)')
-    expect(ctx.lineWidth).toBe(1)
-  })
-})
 
 describe('mouseNearMark', () => {
   const bounds = { minX: 100, maxX: 200, minY: 40, maxY: 80 }
@@ -90,66 +125,7 @@ describe('mouseNearMark', () => {
   })
 })
 
-describe('idle link path', () => {
-  it('builds one path from home positions', () => {
-    const moveTo = vi.fn()
-    const lineTo = vi.fn()
-    vi.stubGlobal('Path2D', class {
-      moveTo = moveTo
-      lineTo = lineTo
-    })
-    buildIdleLinkPath(
-      [{ home: { x: 0, y: 0 } }, { home: { x: 4, y: 6 } }],
-      [[0, 1]],
-    )
-    expect(moveTo).toHaveBeenCalledWith(0, 0)
-    expect(lineTo).toHaveBeenCalledWith(4, 6)
-  })
 
-  it('strokes a cached path once', () => {
-    const ctx = {
-      stroke: vi.fn(),
-      strokeStyle: '',
-      lineWidth: 0,
-    }
-    const path = {} as Path2D
-    strokeIdlePath(ctx as unknown as CanvasRenderingContext2D, path)
-    expect(ctx.stroke).toHaveBeenCalledTimes(1)
-    expect(ctx.stroke).toHaveBeenCalledWith(path)
-    expect(ctx.strokeStyle).toBe('rgba(91, 141, 239, 0.42)')
-    expect(ctx.lineWidth).toBe(1)
-  })
-})
-
-describe('shimmer blocks', () => {
-  const bounds = { minX: 0, maxX: 100, minY: 0, maxY: 100 }
-
-  it('maps home position onto the existing along axis', () => {
-    expect(shimmerAlong(0, 0, bounds)).toBe(0)
-    expect(shimmerAlong(100, 100, bounds)).toBe(1)
-    expect(shimmerAlong(50, 50, bounds)).toBe(0.5)
-  })
-
-  it('treats a block as live only when it intersects the 0.13 window', () => {
-    expect(blockHitsShimmer(0, 0.1, 0.5)).toBe(false)
-    expect(blockHitsShimmer(0.4, 0.45, 0.5)).toBe(true)
-    expect(blockHitsShimmer(0.63, 0.8, 0.5)).toBe(true)
-    expect(blockHitsShimmer(0.64, 0.8, 0.5)).toBe(false)
-  })
-
-  it('merges dots whose idle circles overlap into one block', () => {
-    const blocks = mergeDotBlocks([
-      { x: 0, y: 0, size: 2, along: 0 },
-      { x: 3, y: 0, size: 2, along: 0.1 },
-      { x: 80, y: 80, size: 1, along: 0.9 },
-    ])
-    expect(blocks).toHaveLength(2)
-    expect(blocks[0].indices).toEqual([0, 1])
-    expect(blocks[1].indices).toEqual([2])
-    expect(blocks[0].alongMin).toBe(0)
-    expect(blocks[0].alongMax).toBe(0.1)
-  })
-})
 
 describe('unboundLinkPairs', () => {
   it('returns the same pairs as a nested a<b loop within 18000', () => {
@@ -225,21 +201,6 @@ describe('chordNearFill', () => {
   })
 })
 
-describe('lineIntersect', () => {
-  it('finds the miter of two offset edges', () => {
-    expect(lineIntersect(0, 1, 1, 0, 1, 0, 0, 1)).toEqual({ x: 1, y: 1 })
-  })
-})
-
-describe('segmentInside', () => {
-  it('rejects a chord that leaves the fill', () => {
-    expect(segmentInside(0, 0, 40, 0, (x) => x <= 2 || x >= 38)).toBe(false)
-  })
-
-  it('keeps a chord that stays inside', () => {
-    expect(segmentInside(0, 0, 10, 0, () => true)).toBe(true)
-  })
-})
 
 
 

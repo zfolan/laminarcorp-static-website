@@ -123,19 +123,6 @@ export const chordNearFill = (
   )
 }
 
-export const segmentInside = (
-  ax: number, ay: number, bx: number, by: number,
-  inside: (x: number, y: number) => boolean,
-  step = 4,
-) => {
-  const len = Math.hypot(bx - ax, by - ay)
-  const n = Math.max(1, Math.ceil(len / step))
-  for (let i = 1; i < n; i += 1) {
-    const t = i / n
-    if (!inside(ax + (bx - ax) * t, ay + (by - ay) * t)) return false
-  }
-  return true
-}
 
 
 
@@ -196,34 +183,6 @@ export const sleeveTone = (shown: number, target: number): SleeveTone => {
   return 'off'
 }
 
-export const fillIdleDots = (
-  ctx: CanvasRenderingContext2D,
-  dots: Array<{ x: number; y: number; size: number }>,
-) => {
-  if (dots.length === 0) return
-  ctx.beginPath()
-  for (const dot of dots) {
-    ctx.moveTo(dot.x + dot.size, dot.y)
-    ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2)
-  }
-  ctx.fillStyle = 'rgba(131, 169, 204, 0.72)'
-  ctx.fill()
-}
-
-export const strokeIdleLinks = (
-  ctx: CanvasRenderingContext2D,
-  links: Array<{ x1: number; y1: number; x2: number; y2: number }>,
-) => {
-  if (links.length === 0) return
-  ctx.beginPath()
-  for (const link of links) {
-    ctx.moveTo(link.x1, link.y1)
-    ctx.lineTo(link.x2, link.y2)
-  }
-  ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
-  ctx.lineWidth = 1
-  ctx.stroke()
-}
 
 export const mouseNearMark = (
   mx: number | null,
@@ -260,76 +219,10 @@ export const buildIdleLinkPath = (
 
 export const strokeIdlePath = (ctx: CanvasRenderingContext2D, path: Path2D) => {
   ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
-  ctx.lineWidth = 1
+  ctx.lineWidth = 3
   ctx.stroke(path)
 }
 
-export const shimmerAlong = (
-  x: number,
-  y: number,
-  bounds: { minX: number; maxX: number; minY: number; maxY: number },
-) => {
-  const spanX = Math.max(1, bounds.maxX - bounds.minX)
-  const spanY = Math.max(1, bounds.maxY - bounds.minY)
-  return ((x - bounds.minX) / spanX) * 0.68 + ((y - bounds.minY) / spanY) * 0.32
-}
-
-export const blockHitsShimmer = (alongMin: number, alongMax: number, pos: number) =>
-  alongMin <= pos + 0.13 && alongMax >= pos - 0.13
-
-export const mergeDotBlocks = (
-  dots: Array<{ x: number; y: number; size: number; along: number }>,
-) => {
-  const n = dots.length
-  const parent = Array.from({ length: n }, (_, i) => i)
-  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
-  for (let i = 0; i < n; i += 1) {
-    for (let j = i + 1; j < n; j += 1) {
-      const dx = dots[i].x - dots[j].x
-      const dy = dots[i].y - dots[j].y
-      const r = dots[i].size + dots[j].size
-      if (dx * dx + dy * dy >= r * r) continue
-      let a = find(i)
-      let b = find(j)
-      if (a !== b) parent[b] = a
-    }
-  }
-  const groups = new Map<number, number[]>()
-  for (let i = 0; i < n; i += 1) {
-    const root = find(i)
-    const list = groups.get(root)
-    if (list) list.push(i)
-    else groups.set(root, [i])
-  }
-  const blocks = [...groups.values()].map((indices) => {
-    indices.sort((a, b) => a - b)
-    let alongMin = dots[indices[0]].along
-    let alongMax = alongMin
-    for (const i of indices) {
-      alongMin = Math.min(alongMin, dots[i].along)
-      alongMax = Math.max(alongMax, dots[i].along)
-    }
-    return { indices, alongMin, alongMax }
-  })
-  blocks.sort((a, b) => a.alongMin - b.alongMin || a.indices[0] - b.indices[0])
-  const packed: typeof blocks = []
-  for (const block of blocks) {
-    const last = packed[packed.length - 1]
-    if (last && block.alongMax - last.alongMin <= 0.13) {
-      last.indices.push(...block.indices)
-      last.alongMin = Math.min(last.alongMin, block.alongMin)
-      last.alongMax = Math.max(last.alongMax, block.alongMax)
-    } else {
-      packed.push({
-        indices: [...block.indices],
-        alongMin: block.alongMin,
-        alongMax: block.alongMax,
-      })
-    }
-  }
-  return packed
-
-}
 
 export const unboundLinkPairs = (
   points: Array<{ x: number; y: number }>,
@@ -400,90 +293,12 @@ const makeTag = (kind: TagKind, name: string): ParticleTag => {
   }
 }
 
-export const lineIntersect = (
-  px: number, py: number, dx: number, dy: number,
-  qx: number, qy: number, ex: number, ey: number,
-) => {
-  const cross = dx * ey - dy * ex
-  if (Math.abs(cross) < 1e-8) return null
-  const t = ((qx - px) * ey - (qy - py) * ex) / cross
-  return { x: px + t * dx, y: py + t * dy }
-}
 
 const unit = (x: number, y: number) => {
   const n = Math.hypot(x, y) || 1
   return { x: x / n, y: y / n }
 }
 
-const inwardNormal = (
-  px: number, py: number, tx: number, ty: number,
-  offset: number, fills: SVGPathElement[],
-) => {
-  const n = unit(-ty, tx)
-  const left = { x: px + n.x * offset, y: py + n.y * offset }
-  const right = { x: px - n.x * offset, y: py - n.y * offset }
-  const leftIn = inFill(fills, left.x, left.y)
-  const rightIn = inFill(fills, right.x, right.y)
-  if (leftIn && !rightIn) return n
-  if (rightIn && !leftIn) return { x: -n.x, y: -n.y }
-  if (leftIn && rightIn) {
-    const deeper = inFill(fills, px + n.x * (offset + 8), py + n.y * (offset + 8))
-    return deeper ? n : { x: -n.x, y: -n.y }
-  }
-  return null
-}
-
-const simpleOffset = (
-  path: SVGPathElement,
-  at: number,
-  length: number,
-  offset: number,
-  fills: SVGPathElement[],
-) => {
-  const p = path.getPointAtLength(Math.min(Math.max(at, 0), length))
-  if (offset === 0) return { x: p.x, y: p.y }
-  const fwd = path.getPointAtLength(Math.min(length, at + 8))
-  const dir = unit(fwd.x - p.x, fwd.y - p.y)
-  const n = inwardNormal(p.x, p.y, dir.x, dir.y, offset, fills)
-  if (!n) return null
-  return { x: p.x + n.x * offset, y: p.y + n.y * offset }
-}
-
-const offsetAt = (
-  path: SVGPathElement,
-  at: number,
-  length: number,
-  offset: number,
-  fills: SVGPathElement[],
-  capMiter = true,
-) => {
-  const p = path.getPointAtLength(Math.min(Math.max(at, 0), length))
-  if (offset === 0) return { x: p.x, y: p.y }
-  const back = path.getPointAtLength(Math.max(0, at - 8))
-  const fwd = path.getPointAtLength(Math.min(length, at + 8))
-  const inDir = unit(p.x - back.x, p.y - back.y)
-  const outDir = unit(fwd.x - p.x, fwd.y - p.y)
-  const nIn = inwardNormal(p.x, p.y, inDir.x, inDir.y, offset, fills)
-  const nOut = inwardNormal(p.x, p.y, outDir.x, outDir.y, offset, fills)
-  if (!nIn && !nOut) return null
-  if (!nIn) return { x: p.x + nOut!.x * offset, y: p.y + nOut!.y * offset }
-  if (!nOut) return { x: p.x + nIn.x * offset, y: p.y + nIn.y * offset }
-  if (inDir.x * outDir.x + inDir.y * outDir.y >= 0.72) {
-    const n = unit(nIn.x + nOut.x, nIn.y + nOut.y)
-    return { x: p.x + n.x * offset, y: p.y + n.y * offset }
-  }
-  const a = { x: p.x + nIn.x * offset, y: p.y + nIn.y * offset }
-  const b = { x: p.x + nOut.x * offset, y: p.y + nOut.y * offset }
-  const hit = lineIntersect(a.x, a.y, inDir.x, inDir.y, b.x, b.y, outDir.x, outDir.y)
-  if (!hit) return a
-  const miter = Math.hypot(hit.x - p.x, hit.y - p.y)
-  if (capMiter && miter > offset * 2.6) {
-    const k = (offset * 2.2) / miter
-    return { x: p.x + (hit.x - p.x) * k, y: p.y + (hit.y - p.y) * k }
-  }
-  if (!inFill(fills, hit.x, hit.y)) return a
-  return hit
-}
 
 
 const cornerAts = (path: SVGPathElement, length: number) => {
@@ -536,7 +351,7 @@ const closedCorners = (path: SVGPathElement, length: number, features: { x: numb
 
 }
 
-const sampleLogoRibbons = (sparse: boolean) => {
+export const sampleLogoOutline = (sparse: boolean) => {
   const svg = document.querySelector<SVGSVGElement>('.hero-logo')
   if (!svg) return { points: [] as { x: number; y: number }[], links: [] as Array<[number, number]> }
   const paths = [...svg.querySelectorAll('path')]
@@ -547,17 +362,19 @@ const sampleLogoRibbons = (sparse: boolean) => {
 
   const points: { x: number; y: number }[] = []
   const links: Array<[number, number]> = []
-  const ring = sparse ? 26 : 14
   const wavePaths = paths.slice(2)
+  const ctm = svg.getScreenCTM?.()
+  const scale = Math.hypot(ctm?.a ?? 1, ctm?.b ?? 0) || 1
+  const previousStrokeWidth = wavePaths.map((path) => path.getAttribute('stroke-width'))
+  // Six screen pixels clear both 3px outlines and leave a visible gap.
+  wavePaths.forEach((path) => path.setAttribute('stroke-width', String(12 / scale)))
   const hitsWave = (x: number, y: number) => inFill(wavePaths, x, y)
+    || wavePaths.some((path) => typeof path.isPointInStroke === 'function' && path.isPointInStroke({ x, y }))
 
   paths.forEach((path, pathIndex) => {
     const length = path.getTotalLength()
     if (length < 8) return
     const mountain = pathIndex < 2
-    const offsets = mountain
-      ? (sparse ? [0, ring] : [0, ring, ring * 2])
-      : [0, 7]
     const spacing = sparse ? (mountain ? 22 : 20) : (mountain ? 16 : 14)
     const own = [path]
     const features = pathIndex === 0 ? FEATURE_A : []
@@ -568,13 +385,8 @@ const sampleLogoRibbons = (sparse: boolean) => {
       return { a, b, steps: Math.max(1, Math.round((b - a) / spacing)) }
     })
 
-    const keep = (p: { x: number; y: number } | null) => {
-      if (!p) return false
-      if (mountain && hitsWave(p.x, p.y)) return false
-      return true
-    }
-    const add = (p: { x: number; y: number } | null) => {
-      if (!keep(p) || !p) return -1
+    const add = (p: { x: number; y: number }) => {
+      if (mountain && hitsWave(p.x, p.y)) return -1
       points.push(p)
       return points.length - 1
     }
@@ -584,70 +396,36 @@ const sampleLogoRibbons = (sparse: boolean) => {
       const pa = points[a]
       const pb = points[b]
       if (Math.hypot(pa.x - pb.x, pa.y - pb.y) < 0.75) return false
+      if (mountain && segmentHitsFill(pa.x, pa.y, pb.x, pb.y, hitsWave)) return false
       return chordNearFill(pa.x, pa.y, pb.x, pb.y, inStroke)
-    }
-    const rungOk = (a: number, b: number) => {
-      if (a < 0 || b < 0 || a === b) return false
-      const pa = points[a]
-      const pb = points[b]
-      return segmentInside(pa.x, pa.y, pb.x, pb.y, inStroke)
     }
     const linkAlong = (a: number, b: number) => {
       if (along(a, b)) links.push([a, b])
     }
 
 
-    const slot = new Map<string, number>()
-    const key = (ringI: number, kind: string, i: number, k = 0) => `${ringI}:${kind}:${i}:${k}`
-
-    offsets.forEach((offset, ringI) => {
-      corners.forEach((at, i) => {
-        const p = path.getPointAtLength(wrapAt(at, length))
-        const feature = features.some((f) => Math.hypot(p.x - f.x, p.y - f.y) < 14)
-        slot.set(key(ringI, 'c', i), add(offsetAt(path, wrapAt(at, length), length, offset, own, !feature)))
-      })
-      runs.forEach((run, runI) => {
-        for (let k = 1; k < run.steps; k += 1) {
-          const at = wrapAt(run.a + ((run.b - run.a) * k) / run.steps, length)
-          slot.set(key(ringI, 'i', runI, k), add(simpleOffset(path, at, length, offset, own)))
-        }
-      })
-      runs.forEach((run, runI) => {
-        const start = slot.get(key(ringI, 'c', runI)) ?? -1
-        const end = slot.get(key(ringI, 'c', (runI + 1) % corners.length)) ?? -1
-        let prev = start
-        for (let k = 1; k < run.steps; k += 1) {
-          const cur = slot.get(key(ringI, 'i', runI, k)) ?? -1
-          if (cur < 0) continue
-          linkAlong(prev, cur)
-          prev = cur
-        }
-        linkAlong(prev, end)
-      })
+    const cornerIndices = corners.map((at) => add(path.getPointAtLength(wrapAt(at, length))))
+    runs.forEach((run, runI) => {
+      let prev = cornerIndices[runI]
+      for (let k = 1; k < run.steps; k += 1) {
+        const at = wrapAt(run.a + ((run.b - run.a) * k) / run.steps, length)
+        const cur = add(path.getPointAtLength(at))
+        linkAlong(prev, cur)
+        prev = cur
+      }
+      linkAlong(prev, cornerIndices[(runI + 1) % corners.length])
     })
-
-    if (!mountain) return
-    for (let ringI = 1; ringI < offsets.length; ringI += 1) {
-      runs.forEach((run, runI) => {
-        if (sparse && run.steps < 8) return
-        for (let k = 1; k < run.steps; k += 1) {
-          if (k < 3 || k > run.steps - 3) continue
-          if (sparse) {
-            if (k !== Math.round(run.steps / 2)) continue
-          } else if (ringI === 1 ? k % 4 !== 0 : k % 4 !== 2) continue
-          const a = slot.get(key(ringI, 'i', runI, k)) ?? -1
-          const b = slot.get(key(ringI - 1, 'i', runI, k)) ?? -1
-          if (rungOk(a, b)) links.push([a, b])
-        }
-      })
-    }
-
   })
 
   paths.forEach((path, index) => {
     const value = previousFill[index]
     if (value == null) path.removeAttribute('fill')
     else path.setAttribute('fill', value)
+  })
+  wavePaths.forEach((path, index) => {
+    const value = previousStrokeWidth[index]
+    if (value == null) path.removeAttribute('stroke-width')
+    else path.setAttribute('stroke-width', value)
   })
 
   return { points, links }
@@ -856,32 +634,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const boundList: Particle[] = []
     const onScreen = new Set<Particle>()
     const shimmerCache = new Map<Particle, number>()
-    const idleDots: Array<{ x: number; y: number; size: number }> = []
     let idleLinkPath: Path2D | null = null
-    let dotBlocks: Array<{ alongMin: number; alongMax: number; path: Path2D; particles: Particle[] }> = []
     let perLinkPaths: Path2D[] = []
     const rebuildLogoCaches = () => {
       idleLinkPath = buildIdleLinkPath(boundList, logoLinks)
-      const dots = boundList.map((particle) => {
-        const home = particle.home ?? { x: particle.x, y: particle.y }
-        return {
-          x: home.x,
-          y: home.y,
-          size: particle.size,
-          along: shimmerAlong(home.x, home.y, logoBounds),
-        }
-      })
-      dotBlocks = mergeDotBlocks(dots).map((block) => {
-        const path = new Path2D()
-        const particles: Particle[] = []
-        for (const i of block.indices) {
-          const dot = dots[i]
-          path.moveTo(dot.x + dot.size, dot.y)
-          path.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2)
-          particles.push(boundList[i])
-        }
-        return { alongMin: block.alongMin, alongMax: block.alongMax, path, particles }
-      })
       perLinkPaths = logoLinks.map(([i, j]) => {
         const path = new Path2D()
         const left = boundList[i]?.home
@@ -966,7 +722,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         }
       }
       if (logoShape.length === 0) {
-        const sampled = sampleLogoRibbons(!gpu)
+        const sampled = sampleLogoOutline(!gpu)
 
         logoShape = sampled.points
         logoLinks = sampled.links
@@ -1091,13 +847,12 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
 
     const draw = (particle: Particle) => {
-      const glow = particle.bound ? shimmerOf(particle) : 0
       const tagged = Boolean(particle.tag)
-      const r = tagged ? 210 : 131 + 110 * glow
-      const g = tagged ? 228 : 169 + 72 * glow
-      const b = tagged ? 246 : 204 + 51 * glow
-      const a = tagged ? 0.95 : 0.72 + 0.28 * glow
-      const size = particle.size * (1 + glow * 0.45)
+      const r = tagged ? 210 : 131
+      const g = tagged ? 228 : 169
+      const b = tagged ? 246 : 204
+      const a = tagged ? 0.95 : 0.72
+      const size = particle.size
       if (gpu) {
         gpu.dot(particle.x, particle.y, size, r / 255, g / 255, b / 255, a)
         return
@@ -1226,7 +981,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
               left.x, left.y, right.x, right.y,
               91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
               (0.42 + 0.46 * glow) * alpha,
-              1 + glow * 0.8,
+              3 + glow * 0.8,
             )
           }
         } else if (assembled && !near) {
@@ -1239,7 +994,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
             if (glow === 0) continue
             ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${0.42 + 0.46 * glow})`
-            ctx.lineWidth = 1 + glow * 0.8
+            ctx.lineWidth = 3 + glow * 0.8
             ctx.stroke(perLinkPaths[index])
           }
         } else if (assembled && ctx) {
@@ -1253,7 +1008,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             ctx.lineTo(right.x, right.y)
           }
           ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
-          ctx.lineWidth = 1
+          ctx.lineWidth = 3
           ctx.stroke()
           for (const [i, j] of logoLinks) {
             const left = boundList[i]
@@ -1265,7 +1020,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
               left.x, left.y, right.x, right.y,
               91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
               0.42 + 0.46 * glow,
-              1 + glow * 0.8,
+              3 + glow * 0.8,
             )
           }
         } else {
@@ -1280,7 +1035,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
               left.x, left.y, right.x, right.y,
               91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
               (0.42 + 0.46 * glow) * alpha,
-              1 + glow * 0.8,
+              3 + glow * 0.8,
             )
           }
         }
@@ -1505,18 +1260,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
               particle.y = particle.home.y
             }
           }
-          const elapsed = (performance.now() - seedTime) / 1000 - 2.4
-          const pos = elapsed < 0 ? -1e9 : ((elapsed % 5.6) / 5.6) * 1.55 - 0.22
-          for (const block of dotBlocks) {
-            if (elapsed >= 0 && blockHitsShimmer(block.alongMin, block.alongMax, pos)) {
-              for (const particle of block.particles) draw(particle)
-            } else if (ctx) {
-              ctx.fillStyle = 'rgba(131, 169, 204, 0.72)'
-              ctx.fill(block.path)
-            }
-          }
         } else {
-          idleDots.length = 0
           for (const particle of boundList) {
             if (assembled) {
               if (near && mouse.x !== null && mouse.y !== null) {
@@ -1539,14 +1283,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             } else {
               update(particle)
             }
-            if (gpu) draw(particle)
-            else {
-              const glow = shimmerOf(particle)
-              if (glow === 0) idleDots.push(particle)
-              else draw(particle)
-            }
           }
-          if (ctx) fillIdleDots(ctx, idleDots)
         }
 
 

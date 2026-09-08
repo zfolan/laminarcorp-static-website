@@ -626,9 +626,9 @@ button { color: inherit; }
   height: auto;
   overflow: visible;
 }
-.hero-logo path { fill: transparent; }
-.hero-mark--still .hero-logo path:nth-child(-n+2) { fill: #2f3947; }
-.hero-mark--still .hero-logo path:nth-child(n+3) { fill: #5487b6; }
+.hero-logo :is(path, polygon) { fill: transparent; }
+.hero-mark--still .hero-logo polygon { fill: #2f3947; }
+.hero-mark--still .hero-logo path { fill: #5487b6; }
 .hero-title {
   display: flex;
   justify-content: center;

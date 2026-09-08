@@ -88,7 +88,7 @@ const segmentHitsPane = (x1: number, y1: number, x2: number, y2: number, pane: P
   )
 }
 
-const inFill = (paths: SVGPathElement[], x: number, y: number) =>
+const inFill = (paths: SVGGeometryElement[], x: number, y: number) =>
   paths.some((path) => typeof path.isPointInFill === 'function' && path.isPointInFill({ x, y }))
 
 export const segmentHitsFill = (
@@ -202,26 +202,6 @@ export const unboundCap = (area: number, gpu: boolean) =>
 
 
 
-export const buildIdleLinkPath = (
-  bound: Array<{ home: { x: number; y: number } | null }>,
-  links: Array<[number, number]>,
-) => {
-  const path = new Path2D()
-  for (const [i, j] of links) {
-    const left = bound[i]?.home
-    const right = bound[j]?.home
-    if (!left || !right) continue
-    path.moveTo(left.x, left.y)
-    path.lineTo(right.x, right.y)
-  }
-  return path
-}
-
-export const strokeIdlePath = (ctx: CanvasRenderingContext2D, path: Path2D) => {
-  ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
-  ctx.lineWidth = 3
-  ctx.stroke(path)
-}
 
 
 export const unboundLinkPairs = (
@@ -301,7 +281,7 @@ const unit = (x: number, y: number) => {
 
 
 
-const cornerAts = (path: SVGPathElement, length: number) => {
+const cornerAts = (path: SVGGeometryElement, length: number) => {
   const hits: number[] = []
   let prev = path.getPointAtLength(0)
   let prevDir = { x: 0, y: 0 }
@@ -318,29 +298,25 @@ const cornerAts = (path: SVGPathElement, length: number) => {
 
 
 
-const FEATURE_A = [{ x: 354, y: 0 }, { x: 354, y: 166 }]
+
 
 const wrapAt = (at: number, length: number) => {
   const t = at % length
   return t < 0 ? t + length : t
 }
 
-const closedCorners = (path: SVGPathElement, length: number, features: { x: number; y: number }[]) => {
-  const ats = cornerAts(path, length)
-  for (const f of features) {
-    let bestAt = 0
-    let bestD = Infinity
-    const step = Math.max(2, length / 200)
-    for (let at = 0; at <= length; at += step) {
-      const p = path.getPointAtLength(Math.min(at, length))
-      const d = Math.hypot(p.x - f.x, p.y - f.y)
-      if (d < bestD) {
-        bestD = d
-        bestAt = Math.min(at, length)
-      }
+const closedCorners = (path: SVGGeometryElement, length: number) => {
+  if (path.localName === 'polygon') {
+    const vertices = (path as SVGPolygonElement).points
+    const ats = [0]
+    for (let i = 1; i < vertices.numberOfItems; i += 1) {
+      const a = vertices.getItem(i - 1)
+      const b = vertices.getItem(i)
+      ats.push(ats[i - 1] + Math.hypot(b.x - a.x, b.y - a.y))
     }
-    if (bestD < 14) ats.push(bestAt)
+    return ats
   }
+  const ats = cornerAts(path, length)
   const wrapped = ats.map((value) => wrapAt(value, length)).sort((a, b) => a - b)
   const out: number[] = []
   for (const at of wrapped) {
@@ -351,17 +327,80 @@ const closedCorners = (path: SVGPathElement, length: number, features: { x: numb
 
 }
 
+export const sampleInteriorMesh = (
+  bounds: { x: number; y: number; width: number; height: number },
+  inside: (x: number, y: number) => boolean,
+  spacing: number,
+) => {
+  const points: { x: number; y: number }[] = []
+  const links: Array<[number, number]> = []
+  const nodeIndices: number[] = []
+  type Vertex = { x: number; y: number; index: number }
+  const rowHeight = spacing * Math.sqrt(3) / 2
+  const firstCol = Math.floor(bounds.x / spacing) - 1
+  const lastCol = Math.ceil((bounds.x + bounds.width) / spacing) + 1
+  const steps = Math.ceil(spacing)
+  const clip = (a: Vertex, b: Vertex) => {
+    let wasInside = a.index >= 0
+    let start = a.index
+    for (let step = 1; step <= steps; step += 1) {
+      const t = step / steps
+      const isInside = step === steps ? b.index >= 0
+        : inside(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+      if (isInside === wasInside) continue
+      let low = (step - 1) / steps
+      let high = t
+      for (let i = 0; i < 12; i += 1) {
+        const middle = (low + high) / 2
+        if (inside(a.x + (b.x - a.x) * middle, a.y + (b.y - a.y) * middle) === wasInside) low = middle
+        else high = middle
+      }
+      const edge = wasInside ? low : high
+      const index = points.length
+      points.push({ x: a.x + (b.x - a.x) * edge, y: a.y + (b.y - a.y) * edge })
+      if (wasInside) links.push([start, index])
+      else start = index
+      wasInside = isInside
+    }
+    if (wasInside) links.push([start, b.index])
+  }
+  let previous: Vertex[] = []
+  for (let row = Math.floor(bounds.y / rowHeight) - 1; row <= Math.ceil((bounds.y + bounds.height) / rowHeight) + 1; row += 1) {
+    const current: Vertex[] = []
+    for (let col = firstCol; col <= lastCol; col += 1) {
+      const x = (col + (row & 1) * 0.5) * spacing
+      const y = row * rowHeight
+      const index = inside(x, y) ? points.length : -1
+      if (index >= 0) {
+        points.push({ x, y })
+        nodeIndices.push(index)
+      }
+      const vertex = { x, y, index }
+      const slot = current.length
+      for (const neighbor of [current[slot - 1], previous[slot], previous[slot + (row & 1 ? 1 : -1)]]) {
+        if (neighbor) clip(neighbor, vertex)
+      }
+      current.push(vertex)
+    }
+    previous = current
+  }
+  return { points, links, nodeIndices }
+}
+
 export const sampleLogoOutline = (sparse: boolean) => {
+  const points: { x: number; y: number }[] = []
+  const links: Array<[number, number]> = []
+  const meshPoints: { x: number; y: number }[] = []
+  const meshLinks: Array<[number, number]> = []
+  const meshNodeIndices: number[] = []
   const svg = document.querySelector<SVGSVGElement>('.hero-logo')
-  if (!svg) return { points: [] as { x: number; y: number }[], links: [] as Array<[number, number]> }
-  const paths = [...svg.querySelectorAll('path')]
-  if (paths.length === 0) return { points: [], links: [] }
+  if (!svg) return { points, links, meshPoints, meshLinks, meshNodeIndices }
+  const paths = [...svg.querySelectorAll<SVGGeometryElement>('path, polygon')]
+  if (paths.length === 0) return { points, links, meshPoints, meshLinks, meshNodeIndices }
 
   const previousFill = paths.map((path) => path.getAttribute('fill'))
   paths.forEach((path) => path.setAttribute('fill', '#ffffff'))
 
-  const points: { x: number; y: number }[] = []
-  const links: Array<[number, number]> = []
   const wavePaths = paths.slice(2)
   const ctm = svg.getScreenCTM?.()
   const scale = Math.hypot(ctm?.a ?? 1, ctm?.b ?? 0) || 1
@@ -370,15 +409,23 @@ export const sampleLogoOutline = (sparse: boolean) => {
   wavePaths.forEach((path) => path.setAttribute('stroke-width', String(12 / scale)))
   const hitsWave = (x: number, y: number) => inFill(wavePaths, x, y)
     || wavePaths.some((path) => typeof path.isPointInStroke === 'function' && path.isPointInStroke({ x, y }))
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
 
   paths.forEach((path, pathIndex) => {
     const length = path.getTotalLength()
     if (length < 8) return
+    const bounds = path.getBBox()
+    minX = Math.min(minX, bounds.x)
+    minY = Math.min(minY, bounds.y)
+    maxX = Math.max(maxX, bounds.x + bounds.width)
+    maxY = Math.max(maxY, bounds.y + bounds.height)
     const mountain = pathIndex < 2
     const spacing = sparse ? (mountain ? 22 : 20) : (mountain ? 16 : 14)
     const own = [path]
-    const features = pathIndex === 0 ? FEATURE_A : []
-    const corners = closedCorners(path, length, features)
+    const corners = closedCorners(path, length)
     const runs = corners.map((a, i) => {
       const next = corners[(i + 1) % corners.length]
       const b = next <= a ? next + length : next
@@ -417,6 +464,18 @@ export const sampleLogoOutline = (sparse: boolean) => {
     })
   })
 
+  if (maxX > minX && maxY > minY) {
+    const mountainPaths = paths.slice(0, 2)
+    const mesh = sampleInteriorMesh(
+      { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      (x, y) => inFill(wavePaths, x, y) || (inFill(mountainPaths, x, y) && !hitsWave(x, y)),
+      sparse ? 28 : 22,
+    )
+    meshPoints.push(...mesh.points)
+    meshLinks.push(...mesh.links)
+    meshNodeIndices.push(...mesh.nodeIndices)
+  }
+
   paths.forEach((path, index) => {
     const value = previousFill[index]
     if (value == null) path.removeAttribute('fill')
@@ -428,7 +487,7 @@ export const sampleLogoOutline = (sparse: boolean) => {
     else path.setAttribute('stroke-width', value)
   })
 
-  return { points, links }
+  return { points, links, meshPoints, meshLinks, meshNodeIndices }
 }
 
 
@@ -609,12 +668,17 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const ctx = gpu ? null : canvas.getContext('2d')
     if (!gpu && !ctx) return
 
+    let shimmerPosition = -1
+
 
     const mouse = { x: null as number | null, y: null as number | null, radius: 200 }
     let particles: Particle[] = []
     let heroAnchors: { x: number; y: number }[] = []
     let logoShape: { x: number; y: number }[] = []
     let logoLinks: Array<[number, number]> = []
+    let meshStart = 0
+    let meshLinks: Array<[number, number]> = []
+    let meshNodes: number[] = []
     let titleAnchors: { x: number; y: number }[] = []
     let panes: Pane[] = []
     let halos: Halo[] = []
@@ -634,21 +698,6 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const boundList: Particle[] = []
     const onScreen = new Set<Particle>()
     const shimmerCache = new Map<Particle, number>()
-    let idleLinkPath: Path2D | null = null
-    let perLinkPaths: Path2D[] = []
-    const rebuildLogoCaches = () => {
-      idleLinkPath = buildIdleLinkPath(boundList, logoLinks)
-      perLinkPaths = logoLinks.map(([i, j]) => {
-        const path = new Path2D()
-        const left = boundList[i]?.home
-        const right = boundList[j]?.home
-        if (left && right) {
-          path.moveTo(left.x, left.y)
-          path.lineTo(right.x, right.y)
-        }
-        return path
-      })
-    }
 
 
 
@@ -659,7 +708,6 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         if (particle.bound) boundList.push(particle)
         else unbound.push(particle)
       }
-      idleLinkPath = null
 
     }
 
@@ -700,7 +748,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           y: scatter ? anchor.y - rise : anchor.y + rise,
           directionX: scatter ? (anchor.x - (anchor.x + drift)) * 0.003 : (Math.random() - 0.5) * 0.12,
           directionY: scatter ? 0.12 + Math.random() * 0.18 : (Math.random() - 0.5) * 0.12,
-          size: Math.random() * 0.8 + 1.1,
+          size: index >= meshStart ? 0.9 : Math.random() * 0.8 + 1.1,
           bound: true,
           home: anchor,
           delay: scatter ? delay : 0,
@@ -724,7 +772,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       if (logoShape.length === 0) {
         const sampled = sampleLogoOutline(!gpu)
 
-        logoShape = sampled.points
+        meshStart = sampled.points.length
+        logoShape = sampled.points.concat(sampled.meshPoints)
+        meshLinks = sampled.meshLinks.map(([a, b]) => [a + meshStart, b + meshStart])
+        meshNodes = sampled.meshNodeIndices.map((index) => index + meshStart)
         logoLinks = sampled.links
       }
       heroAnchors = toCanvasAnchors(logoShape, canvasBounds)
@@ -827,14 +878,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
     const shimmerAt = (x: number, y: number) => {
       if (!assembled) return 0
-      const elapsed = (performance.now() - seedTime) / 1000 - 2.4
-      if (elapsed < 0) return 0
-      const phase = (elapsed % 5.6) / 5.6
       const spanX = Math.max(1, logoBounds.maxX - logoBounds.minX)
       const spanY = Math.max(1, logoBounds.maxY - logoBounds.minY)
       const along = ((x - logoBounds.minX) / spanX) * 0.68 + ((y - logoBounds.minY) / spanY) * 0.32
-      const pos = phase * 1.55 - 0.22
-      const falloff = Math.max(0, 1 - Math.abs(along - pos) / 0.13)
+      const falloff = Math.max(0, 1 - Math.abs(along - shimmerPosition) / 0.13)
       return falloff * falloff
     }
     const shimmerOf = (particle: Particle) => {
@@ -847,11 +894,13 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
 
     const draw = (particle: Particle) => {
+      const glow = particle.bound ? shimmerOf(particle) : 0
+      if (particle.bound && glow === 0) return
       const tagged = Boolean(particle.tag)
-      const r = tagged ? 210 : 131
-      const g = tagged ? 228 : 169
-      const b = tagged ? 246 : 204
-      const a = tagged ? 0.95 : 0.72
+      const r = tagged ? 210 : 131 + 90 * glow
+      const g = tagged ? 228 : 169 + 62 * glow
+      const b = tagged ? 246 : 204 + 51 * glow
+      const a = particle.bound ? 0.8 * glow : tagged ? 0.95 : 0.72
       const size = particle.size
       if (gpu) {
         gpu.dot(particle.x, particle.y, size, r / 255, g / 255, b / 255, a)
@@ -967,77 +1016,42 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
         return Math.max(0, Math.min(1, 1 - dist / 70))
       }
       if (logoOnScreen) {
-        const near = Boolean(gpu) && mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
 
-        if (gpu) {
-          for (const [i, j] of logoLinks) {
+        if (assembled) {
+          for (const [i, j] of meshLinks) {
             const left = boundList[i]
             const right = boundList[j]
-            if (!left || !right) continue
-            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
-            const alpha = assembled ? 1 : settle(left) * settle(right)
-            if (alpha < 0.08) continue
-            paintLine(
-              left.x, left.y, right.x, right.y,
-              91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
-              (0.42 + 0.46 * glow) * alpha,
-              3 + glow * 0.8,
-            )
-          }
-        } else if (assembled && !near) {
-          if (!idleLinkPath) rebuildLogoCaches()
-          if (idleLinkPath && ctx) strokeIdlePath(ctx, idleLinkPath)
-          for (const [index, [i, j]] of logoLinks.entries()) {
-            const left = boundList[i]
-            const right = boundList[j]
-            if (!left || !right || !ctx) continue
-            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
-            if (glow === 0) continue
-            ctx.strokeStyle = `rgba(${Math.round(91 + 130 * glow)}, ${Math.round(141 + 90 * glow)}, ${Math.round(239 + 16 * glow)}, ${0.42 + 0.46 * glow})`
-            ctx.lineWidth = 3 + glow * 0.8
-            ctx.stroke(perLinkPaths[index])
-          }
-        } else if (assembled && ctx) {
-          ctx.beginPath()
-          for (const [i, j] of logoLinks) {
-            const left = boundList[i]
-            const right = boundList[j]
-            if (!left || !right) continue
-            if ((shimmerOf(left) + shimmerOf(right)) * 0.5 !== 0) continue
-            ctx.moveTo(left.x, left.y)
-            ctx.lineTo(right.x, right.y)
-          }
-          ctx.strokeStyle = 'rgba(91, 141, 239, 0.42)'
-          ctx.lineWidth = 3
-          ctx.stroke()
-          for (const [i, j] of logoLinks) {
-            const left = boundList[i]
-            const right = boundList[j]
-            if (!left || !right) continue
             const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
             if (glow === 0) continue
             paintLine(
               left.x, left.y, right.x, right.y,
               91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
-              0.42 + 0.46 * glow,
-              3 + glow * 0.8,
+              0.5 * glow, 1,
             )
           }
-        } else {
+          for (const index of meshNodes) draw(boundList[index])
+          // Knock the mesh out beneath the translucent simulated contour.
           for (const [i, j] of logoLinks) {
             const left = boundList[i]
             const right = boundList[j]
-            if (!left || !right) continue
             const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
-            const alpha = settle(left) * settle(right)
-            if (alpha < 0.08) continue
-            paintLine(
-              left.x, left.y, right.x, right.y,
-              91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
-              (0.42 + 0.46 * glow) * alpha,
-              3 + glow * 0.8,
-            )
+            paintLine(left.x, left.y, right.x, right.y, 7, 9, 13, 1, 3 + glow * 0.8)
           }
+        }
+
+        for (const [i, j] of logoLinks) {
+          const left = boundList[i]
+          const right = boundList[j]
+          if (!left || !right) continue
+          const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
+          const alpha = assembled ? 1 : settle(left) * settle(right)
+          if (alpha < 0.08) continue
+          paintLine(
+            left.x, left.y, right.x, right.y,
+            91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
+            (0.42 + 0.46 * glow) * alpha,
+            3 + glow * 0.8,
+          )
         }
       }
 
@@ -1234,6 +1248,8 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       tick += 1
       if (tick % 8 === 0) readScene()
       if (!assembled && seeded && performance.now() - seedTime > 2400) assembled = true
+      const shimmerElapsed = (performance.now() - seedTime) / 1000 - 2.4
+      shimmerPosition = assembled && shimmerElapsed >= 0 ? (shimmerElapsed % 5.6) / 5.6 * 1.55 - 0.22 : -1
       camX = window.scrollX
       camY = window.scrollY
       const logoOnScreen =
@@ -1251,38 +1267,27 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       if (logoOnScreen) {
         const near = Boolean(gpu) && mouseNearMark(mouse.x, mouse.y, mouse.radius, logoBounds)
 
-        if (near) idleLinkPath = null
-        if (!gpu && assembled && !near) {
-          if (!idleLinkPath) rebuildLogoCaches()
-          for (const particle of boundList) {
-            if (particle.home) {
+        for (const particle of boundList) {
+          if (assembled) {
+            if (near && mouse.x !== null && mouse.y !== null) {
+              const dx = mouse.x - particle.x
+              const dy = mouse.y - particle.y
+              const distance = Math.sqrt(dx * dx + dy * dy)
+              if (distance < mouse.radius + particle.size && distance > 0) {
+                const force = (mouse.radius - distance) / mouse.radius
+                particle.x += -(dx / distance) * force * 5
+                particle.y += -(dy / distance) * force * 5
+              }
+              if (particle.home) {
+                particle.x += (particle.home.x - particle.x) * 0.12
+                particle.y += (particle.home.y - particle.y) * 0.12
+              }
+            } else if (particle.home) {
               particle.x = particle.home.x
               particle.y = particle.home.y
             }
-          }
-        } else {
-          for (const particle of boundList) {
-            if (assembled) {
-              if (near && mouse.x !== null && mouse.y !== null) {
-                const dx = mouse.x - particle.x
-                const dy = mouse.y - particle.y
-                const distance = Math.sqrt(dx * dx + dy * dy)
-                if (distance < mouse.radius + particle.size && distance > 0) {
-                  const force = (mouse.radius - distance) / mouse.radius
-                  particle.x += -(dx / distance) * force * 5
-                  particle.y += -(dy / distance) * force * 5
-                }
-                if (particle.home) {
-                  particle.x += (particle.home.x - particle.x) * 0.12
-                  particle.y += (particle.home.y - particle.y) * 0.12
-                }
-              } else if (particle.home) {
-                particle.x = particle.home.x
-                particle.y = particle.home.y
-              }
-            } else {
-              update(particle)
-            }
+          } else {
+            update(particle)
           }
         }
 

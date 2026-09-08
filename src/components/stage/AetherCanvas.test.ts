@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chordNearFill, mergeClosePoints, mouseNearMark, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
+import { chordNearFill, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
 
 
 
@@ -18,6 +18,7 @@ describe('logo outline', () => {
     svg.classList.add('hero-logo')
     const path = document.createElementNS(svg.namespaceURI, 'path')
     Object.assign(path, {
+      getBBox: () => ({ x: -100, y: -100, width: 200, height: 200 }),
       getTotalLength: () => 200 * Math.PI,
       getPointAtLength: (at: number) => ({
         x: 100 * Math.cos(at / 100),
@@ -51,13 +52,16 @@ describe('logo outline', () => {
     }
   })
 
-  it('leaves a gap behind the wave without removing the exposed base contour', () => {
+  it('keeps polygon corners exact while leaving the wave gap open', () => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.classList.add('hero-logo')
     const empty = document.createElementNS(svg.namespaceURI, 'path')
     Object.assign(empty, { getTotalLength: () => 0, isPointInFill: () => false })
-    const base = document.createElementNS(svg.namespaceURI, 'path')
+    const base = document.createElementNS(svg.namespaceURI, 'polygon')
+    const corners = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 20 }, { x: 0, y: 20 }]
     Object.assign(base, {
+      points: { numberOfItems: corners.length, getItem: (index: number) => corners[index] },
+      getBBox: () => ({ x: 0, y: 0, width: 100, height: 20 }),
       getTotalLength: () => 240,
       getPointAtLength: (at: number) => at <= 100 ? { x: at, y: 0 }
         : at <= 120 ? { x: 100, y: at - 100 }
@@ -75,6 +79,9 @@ describe('logo outline', () => {
     try {
       for (const sparse of [false, true]) {
         const { points, links } = sampleLogoOutline(sparse)
+        for (const corner of corners) {
+          expect(points.some((point) => Math.hypot(point.x - corner.x, point.y - corner.y) < 0.001)).toBe(true)
+        }
         const bottom = links.map(([a, b]) => [points[a], points[b]]).filter(([a, b]) => a.y === 0 || b.y === 0)
         expect(bottom.some(([a, b]) => Math.max(a.x, b.x) < 42)).toBe(true)
         expect(bottom.some(([a, b]) => Math.min(a.x, b.x) > 58)).toBe(true)
@@ -85,6 +92,39 @@ describe('logo outline', () => {
     }
   })
 })
+
+describe('interior mesh', () => {
+  it('clips a uniform triangular grid to the glyph and its cutouts', () => {
+    const inside = (x: number, y: number) => x > 0 && x < 120 && y > 0 && y < 100
+      && !(x > 45 && x < 75 && y < 65)
+    for (const spacing of [22, 28]) {
+      const { points, links, nodeIndices } = sampleInteriorMesh(
+        { x: 0, y: 0, width: 120, height: 100 }, inside, spacing,
+      )
+      const nodes = new Set(nodeIndices)
+      expect(nodeIndices.some((index) => points[index].x < 45)).toBe(true)
+      expect(nodeIndices.some((index) => points[index].x > 75)).toBe(true)
+      expect(Math.min(...points.map((point) => point.y))).toBeCloseTo(0, 2)
+      expect(Math.max(...points.map((point) => point.y))).toBeCloseTo(100, 2)
+      expect(Math.min(...points.map((point) => point.x))).toBeCloseTo(0, 2)
+      expect(Math.max(...points.map((point) => point.x))).toBeCloseTo(120, 2)
+      expect(links.some(([a, b]) => nodes.has(a) && nodes.has(b) && points[a].x < 45 && points[b].x < 45)).toBe(true)
+      expect(links.some(([a, b]) => nodes.has(a) && nodes.has(b) && points[a].x > 75 && points[b].x > 75)).toBe(true)
+      for (const point of points) expect(inside(point.x, point.y)).toBe(true)
+      for (const [a, b] of links) {
+        const left = points[a]
+        const right = points[b]
+        if (nodes.has(a) && nodes.has(b)) {
+          expect(Math.hypot(right.x - left.x, right.y - left.y)).toBeCloseTo(spacing, 10)
+        }
+        for (let t = 0; t <= 1; t += 0.01) {
+          expect(inside(left.x + (right.x - left.x) * t, left.y + (right.y - left.y) * t)).toBe(true)
+        }
+      }
+    }
+  })
+})
+
 
 describe('sleeveTone', () => {
   it('is green only when displayed current equals target', () => {

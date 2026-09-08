@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chordNearFill, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
+import { chordNearFill, diskTouchesSegment, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
 
 
 
@@ -11,6 +11,26 @@ import { chordNearFill, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sam
 
 
 
+
+describe('node disk clearance', () => {
+  it('checks the whole segment and its endpoints, not just the node center', () => {
+    const a = { x: 0, y: 0 }
+    const b = { x: 100, y: 0 }
+    expect(diskTouchesSegment({ x: 50, y: 3 }, a, b, 3)).toBe(true)
+    expect(diskTouchesSegment({ x: 50, y: 3.01 }, a, b, 3)).toBe(false)
+    expect(diskTouchesSegment({ x: -2, y: -2 }, a, b, 3)).toBe(true)
+    expect(diskTouchesSegment({ x: -4, y: 0 }, a, b, 3)).toBe(false)
+  })
+
+  it('handles diagonal and collapsed simulated edges', () => {
+    const a = { x: 0, y: 0 }
+    const b = { x: 10, y: 10 }
+    expect(diskTouchesSegment({ x: 5, y: 6 }, a, b, 1)).toBe(true)
+    expect(diskTouchesSegment({ x: 5, y: 7 }, a, b, 1)).toBe(false)
+    expect(diskTouchesSegment({ x: 10, y: 12 }, b, b, 2)).toBe(true)
+    expect(diskTouchesSegment({ x: 10, y: 12.01 }, b, b, 2)).toBe(false)
+  })
+})
 
 describe('logo outline', () => {
   it('samples one closed contour without inset rings or cross-links', () => {

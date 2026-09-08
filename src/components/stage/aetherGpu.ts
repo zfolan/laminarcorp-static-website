@@ -94,7 +94,11 @@ const softwareGl = (gl: WebGLRenderingContext) => {
 export type AetherGpu = {
   begin: (viewW: number, viewH: number, camX: number, camY: number) => void
   dot: (x: number, y: number, size: number, r: number, g: number, b: number, a: number) => void
-  line: (x1: number, y1: number, x2: number, y2: number, r: number, g: number, b: number, a: number, width: number) => void
+  line: (
+    x1: number, y1: number, x2: number, y2: number,
+    r: number, g: number, b: number, a: number, width: number,
+    endR?: number, endG?: number, endB?: number, endA?: number, endWidth?: number,
+  ) => void
   flush: () => void
 }
 
@@ -170,19 +174,20 @@ export const tryAetherGpu = (canvas: HTMLCanvasElement): AetherGpu | null => {
       dots[o + 6] = a
       dotN += 1
     },
-    line(x1, y1, x2, y2, r, g, b, a, width) {
+    line(x1, y1, x2, y2, r, g, b, a, width, endR = r, endG = g, endB = b, endA = a, endWidth = width) {
       const dx = x2 - x1
       const dy = y2 - y1
       const len = Math.hypot(dx, dy) || 1
-      const hw = Math.max(width, 1) * 0.5
-      const nx = (-dy / len) * hw
-      const ny = (dx / len) * hw
-      pushLineVert(x1 + nx, y1 + ny, r, g, b, a)
-      pushLineVert(x1 - nx, y1 - ny, r, g, b, a)
-      pushLineVert(x2 + nx, y2 + ny, r, g, b, a)
-      pushLineVert(x1 - nx, y1 - ny, r, g, b, a)
-      pushLineVert(x2 - nx, y2 - ny, r, g, b, a)
-      pushLineVert(x2 + nx, y2 + ny, r, g, b, a)
+      const startHalf = Math.max(width, 1) * 0.5
+      const endHalf = Math.max(endWidth, 1) * 0.5
+      const nx = -dy / len
+      const ny = dx / len
+      pushLineVert(x1 + nx * startHalf, y1 + ny * startHalf, r, g, b, a)
+      pushLineVert(x1 - nx * startHalf, y1 - ny * startHalf, r, g, b, a)
+      pushLineVert(x2 + nx * endHalf, y2 + ny * endHalf, endR, endG, endB, endA)
+      pushLineVert(x1 - nx * startHalf, y1 - ny * startHalf, r, g, b, a)
+      pushLineVert(x2 - nx * endHalf, y2 - ny * endHalf, endR, endG, endB, endA)
+      pushLineVert(x2 + nx * endHalf, y2 + ny * endHalf, endR, endG, endB, endA)
     },
     flush() {
       gl.viewport(0, 0, viewW, viewH)

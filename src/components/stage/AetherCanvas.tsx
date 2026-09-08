@@ -88,6 +88,24 @@ const segmentHitsPane = (x1: number, y1: number, x2: number, y2: number, pane: P
   )
 }
 
+export const diskTouchesSegment = (
+  point: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  radius: number,
+) => {
+  if (point.x < Math.min(a.x, b.x) - radius || point.x > Math.max(a.x, b.x) + radius
+    || point.y < Math.min(a.y, b.y) - radius || point.y > Math.max(a.y, b.y) + radius) return false
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lengthSquared = dx * dx + dy * dy
+  const t = lengthSquared === 0 ? 0
+    : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared))
+  const offsetX = point.x - a.x - t * dx
+  const offsetY = point.y - a.y - t * dy
+  return offsetX * offsetX + offsetY * offsetY <= radius * radius
+}
+
 const inFill = (paths: SVGGeometryElement[], x: number, y: number) =>
   paths.some((path) => typeof path.isPointInFill === 'function' && path.isPointInFill({ x, y }))
 
@@ -896,6 +914,13 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const draw = (particle: Particle) => {
       const glow = particle.bound ? shimmerOf(particle) : 0
       if (particle.bound && glow === 0) return
+      if (particle.bound) {
+        // Clear the full dot, the widest shimmer stroke, and one raster pixel.
+        const clearance = Math.ceil(particle.size + 3.8 / 2) + 1
+        for (const [i, j] of logoLinks) {
+          if (diskTouchesSegment(particle, boundList[i], boundList[j], clearance)) return
+        }
+      }
       const tagged = Boolean(particle.tag)
       const r = tagged ? 210 : 131 + 90 * glow
       const g = tagged ? 228 : 169 + 62 * glow
@@ -916,18 +941,76 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
     const paintLine = (
       x1: number, y1: number, x2: number, y2: number,
       r: number, g: number, b: number, a: number, width: number,
+      endR = r, endG = g, endB = b, endA = a, endWidth = width,
     ) => {
       if (gpu) {
-        gpu.line(x1, y1, x2, y2, r / 255, g / 255, b / 255, a, width)
+        gpu.line(x1, y1, x2, y2, r / 255, g / 255, b / 255, a, width,
+          endR / 255, endG / 255, endB / 255, endA, endWidth)
         return
       }
       if (!ctx) return
-      ctx.strokeStyle = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`
-      ctx.lineWidth = width
+      const startColor = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`
+      const gradientColor = r !== endR || g !== endG || b !== endB || a !== endA
+      if (!gradientColor && width === endWidth) {
+        ctx.strokeStyle = startColor
+        ctx.lineWidth = width
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x2, y2)
+        ctx.stroke()
+        return
+      }
+      ctx.fillStyle = startColor
+      if (gradientColor) {
+        const gradient = ctx.createLinearGradient(x1, y1, x2, y2)
+        gradient.addColorStop(0, startColor)
+        gradient.addColorStop(1, `rgba(${Math.round(endR)}, ${Math.round(endG)}, ${Math.round(endB)}, ${endA})`)
+        ctx.fillStyle = gradient
+      }
+      const dx = x2 - x1
+      const dy = y2 - y1
+      const length = Math.hypot(dx, dy) || 1
+      const nx = -dy / length * 0.5
+      const ny = dx / length * 0.5
       ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.lineTo(x2, y2)
-      ctx.stroke()
+      ctx.moveTo(x1 + nx * width, y1 + ny * width)
+      ctx.lineTo(x1 - nx * width, y1 - ny * width)
+      ctx.lineTo(x2 - nx * endWidth, y2 - ny * endWidth)
+      ctx.lineTo(x2 + nx * endWidth, y2 + ny * endWidth)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    const paintOutline = (left: Particle, right: Particle, alpha: number, backing: boolean) => {
+      const dx = right.x - left.x
+      const dy = right.y - left.y
+      let startGlow = shimmerOf(left)
+      const finalGlow = shimmerOf(right)
+      const steps = startGlow > 0 || finalGlow > 0 ? Math.max(1, Math.ceil(Math.hypot(dx, dy) / 4)) : 1
+      let x1 = left.x
+      let y1 = left.y
+      for (let step = 1; step <= steps; step += 1) {
+        const t = step / steps
+        const x2 = left.x + dx * t
+        const y2 = left.y + dy * t
+        const endGlow = step === steps ? finalGlow : shimmerAt(x2, y2)
+        paintLine(
+          x1, y1, x2, y2,
+          backing ? 7 : 91 + 130 * startGlow,
+          backing ? 9 : 141 + 90 * startGlow,
+          backing ? 13 : 239 + 16 * startGlow,
+          backing ? 1 : (0.42 + 0.46 * startGlow) * alpha,
+          3 + startGlow * 0.8,
+          backing ? 7 : 91 + 130 * endGlow,
+          backing ? 9 : 141 + 90 * endGlow,
+          backing ? 13 : 239 + 16 * endGlow,
+          backing ? 1 : (0.42 + 0.46 * endGlow) * alpha,
+          3 + endGlow * 0.8,
+        )
+        x1 = x2
+        y1 = y2
+        startGlow = endGlow
+      }
     }
 
 
@@ -1032,10 +1115,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           for (const index of meshNodes) draw(boundList[index])
           // Knock the mesh out beneath the translucent simulated contour.
           for (const [i, j] of logoLinks) {
-            const left = boundList[i]
-            const right = boundList[j]
-            const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
-            paintLine(left.x, left.y, right.x, right.y, 7, 9, 13, 1, 3 + glow * 0.8)
+            paintOutline(boundList[i], boundList[j], 1, true)
           }
         }
 
@@ -1043,15 +1123,9 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           const left = boundList[i]
           const right = boundList[j]
           if (!left || !right) continue
-          const glow = (shimmerOf(left) + shimmerOf(right)) * 0.5
           const alpha = assembled ? 1 : settle(left) * settle(right)
           if (alpha < 0.08) continue
-          paintLine(
-            left.x, left.y, right.x, right.y,
-            91 + 130 * glow, 141 + 90 * glow, 239 + 16 * glow,
-            (0.42 + 0.46 * glow) * alpha,
-            3 + glow * 0.8,
-          )
+          paintOutline(left, right, alpha, false)
         }
       }
 

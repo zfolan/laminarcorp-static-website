@@ -1,13 +1,8 @@
 import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
-import { STAGE_CAPTIONS, STAGE_PREFACE } from '../../data/stageBook'
+import { STAGE_CAPTIONS, STAGE_LABELS, STAGE_PREFACE } from '../../data/stageBook'
 import type { SceneId } from '../../types/stage'
 
-const labels: Record<SceneId, string> = {
-  households: 'Households',
-  rebalance: 'Rebalance',
-  analytics: 'Analytics',
-}
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -19,10 +14,12 @@ const rise = {
 export const StageSection = ({
   scene,
   children,
+  details,
   reducedMotion = false,
 }: {
   scene: SceneId
   children: ReactNode
+  details?: ReactNode
   reducedMotion?: boolean
 }) => {
   const preface = STAGE_PREFACE[scene]
@@ -49,7 +46,7 @@ export const StageSection = ({
           transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
         >
           <span className="stage-node__core" aria-hidden="true" />
-          <span className="stage-node__label">{labels[scene]}</span>
+          <span className="stage-node__label">{STAGE_LABELS[scene]}</span>
         </motion.h2>
         <motion.p
           className="product-caption"
@@ -73,13 +70,15 @@ export const StageSection = ({
             ))}
           </div>
         ) : null}
-        <motion.div
+        <motion.figure
           className="product-surface"
           variants={rise}
           transition={{ duration: reducedMotion ? 0 : 0.7, ease }}
         >
           {children}
-        </motion.div>
+          <figcaption>Illustrative product view · Synthetic data</figcaption>
+        </motion.figure>
+        {details}
       </motion.div>
     </section>
   )

@@ -12,7 +12,7 @@ export const HouseholdsFrame = () => (
     <header className="library__intro">
       <p className="library__eyebrow">Household library</p>
       <h3 className="library__title">Household Library</h3>
-      <p className="library__lede">Review the highest-drift households and move directly into rebalance.</p>
+      <p className="library__lede">See which households need attention before moving into analysis and rebalancing.</p>
     </header>
 
     <div className="library__strip" aria-label="Household summary">
@@ -60,7 +60,7 @@ export const HouseholdsFrame = () => (
         </div>
       </div>
 
-      <div className="library__grid" role="list">
+      <div className="library__grid" role="list" tabIndex={0} aria-label="Illustrative household library">
         <div className="library__head" aria-hidden="true">
           <span className="library__rail-slot" />
           <span>Household</span>

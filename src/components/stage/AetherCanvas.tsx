@@ -213,6 +213,10 @@ export const mouseNearMark = (
     && my >= bounds.minY - radius && my <= bounds.maxY + radius
 }
 
+// Reveal the ambient field from the wordmark entrance through the hero-copy fade.
+export const ambientOpacityAt = (elapsedMs: number) =>
+  Math.max(0, Math.min(1, (elapsedMs - 1120) / 1730))
+
 export const unboundCap = (area: number, gpu: boolean) =>
   gpu
     ? Math.min(180, Math.max(80, Math.floor(area / 18000)))
@@ -608,7 +612,7 @@ const paneFromRect = (rect: DOMRect, canvasBounds: DOMRect, pad: number): Pane =
 })
 
 const readKeepouts = (canvasBounds: DOMRect) =>
-  [...document.querySelectorAll<HTMLElement>('.stage-intro__in, .stage-preface, .product-surface')].flatMap((node) => {
+  [...document.querySelectorAll<HTMLElement>('.stage-hero__copy, .stage-intro__in, .stage-preface, .product-surface')].flatMap((node) => {
     const rect = node.getBoundingClientRect()
     if (rect.width < 8 || rect.height < 8) return []
     return [paneFromRect(rect, canvasBounds, 44)]
@@ -685,6 +689,10 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
     const ctx = gpu ? null : canvas.getContext('2d')
     if (!gpu && !ctx) return
+    const entranceStart = performance.now()
+    let ambientOpacity = 0
+    tagsRef.current?.style.setProperty('opacity', '0')
+
 
     let shimmerPosition = -1
 
@@ -912,6 +920,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
 
 
     const draw = (particle: Particle) => {
+      if (!particle.bound && ambientOpacity === 0) return
       const glow = particle.bound ? shimmerOf(particle) : 0
       if (particle.bound && glow === 0) return
       if (particle.bound) {
@@ -925,7 +934,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       const r = tagged ? 210 : 131 + 90 * glow
       const g = tagged ? 228 : 169 + 62 * glow
       const b = tagged ? 246 : 204 + 51 * glow
-      const a = particle.bound ? 0.8 * glow : tagged ? 0.95 : 0.72
+      const a = particle.bound ? 0.8 * glow : (tagged ? 0.95 : 0.72) * ambientOpacity
       const size = particle.size
       if (gpu) {
         gpu.dot(particle.x, particle.y, size, r / 255, g / 255, b / 255, a)
@@ -1128,6 +1137,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
           paintOutline(left, right, alpha, false)
         }
       }
+      if (ambientOpacity === 0) return
 
 
 
@@ -1149,7 +1159,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             if (blocked(pa.x, pa.y, pb.x, pb.y)) continue
             if (crossesHalo(pa.x, pa.y, pb.x, pb.y)) continue
             if (crossesKeepout(pa.x, pa.y, pb.x, pb.y)) continue
-            const opacity = 1 - distance / 18000
+            const opacity = (1 - distance / 18000) * ambientOpacity
             paintLine(pa.x, pa.y, pb.x, pb.y, 91, 141, 239, opacity * 0.45, 1)
 
           }
@@ -1164,7 +1174,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
             if (blocked(pa.x, pa.y, anchor.x, anchor.y)) continue
             if (crossesHalo(pa.x, pa.y, anchor.x, anchor.y)) continue
             if (crossesKeepout(pa.x, pa.y, anchor.x, anchor.y)) continue
-            paintLine(pa.x, pa.y, anchor.x, anchor.y, 131, 169, 204, 0.4 * (1 - distance / 24000), 1)
+            paintLine(pa.x, pa.y, anchor.x, anchor.y, 131, 169, 204, 0.4 * (1 - distance / 24000) * ambientOpacity, 1)
 
           }
         }
@@ -1321,8 +1331,14 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       frame = requestAnimationFrame(animate)
       tick += 1
       if (tick % 8 === 0) readScene()
-      if (!assembled && seeded && performance.now() - seedTime > 2400) assembled = true
-      const shimmerElapsed = (performance.now() - seedTime) / 1000 - 2.4
+      const now = performance.now()
+      const nextOpacity = ambientOpacityAt(now - entranceStart)
+      if (nextOpacity !== ambientOpacity) {
+        ambientOpacity = nextOpacity
+        tagsRef.current?.style.setProperty('opacity', String(ambientOpacity))
+      }
+      if (!assembled && seeded && now - seedTime > 2400) assembled = true
+      const shimmerElapsed = (now - seedTime) / 1000 - 2.4
       shimmerPosition = assembled && shimmerElapsed >= 0 ? (shimmerElapsed % 5.6) / 5.6 * 1.55 - 0.22 : -1
       camX = window.scrollX
       camY = window.scrollY
@@ -1459,7 +1475,7 @@ export const AetherCanvas = ({ reducedMotion }: Props) => {
       aria-hidden="true"
     >
       <canvas ref={canvasRef} />
-      <div className="aether-tags" ref={tagsRef}>
+      <div className="aether-tags" ref={tagsRef} style={{ opacity: 0 }}>
         {Array.from({ length: MAX_TAGS }, (_, index) => (
           <div key={index} className="aether-tag">
             <span className="aether-tag__name" />

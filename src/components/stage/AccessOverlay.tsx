@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { REQUEST_ACCESS_ERROR, submitRequestAccess, validateRequestAccess, type RequestAccessForm, type RequestAccessFormErrors } from '../../lib/requestAccess'
 import type { StageAction } from '../../lib/stageState'
 import type { AccessStatus } from '../../types/stage'
@@ -14,6 +14,25 @@ type Props = {
 export const AccessOverlay = ({ access, accessError, dispatch }: Props) => {
   const [form, setForm] = useState<RequestAccessForm>(emptyForm)
   const [fieldErrors, setFieldErrors] = useState<RequestAccessFormErrors>({})
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const nameRef = useRef<HTMLInputElement>(null)
+  const successRef = useRef<HTMLParagraphElement>(null)
+  const mountedRef = useRef(false)
+
+  useLayoutEffect(() => {
+    mountedRef.current = true
+    const dialog = dialogRef.current!
+    dialog.showModal()
+    nameRef.current?.focus()
+    return () => {
+      mountedRef.current = false
+      dialog.close()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (access === 'success') successRef.current?.focus()
+  }, [access])
 
   const update = (key: keyof RequestAccessForm, value: string) => {
     setForm((current) => ({ ...current, [key]: value }))
@@ -22,36 +41,52 @@ export const AccessOverlay = ({ access, accessError, dispatch }: Props) => {
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (access === 'submitting') return
     const nextErrors = validateRequestAccess(form)
     setFieldErrors(nextErrors)
     if (Object.keys(nextErrors).length) return
     dispatch({ type: 'submit-access' })
     try {
       await submitRequestAccess(form)
-      dispatch({ type: 'access-success' })
+      if (mountedRef.current) dispatch({ type: 'access-success' })
     } catch {
-      dispatch({ type: 'access-error', message: REQUEST_ACCESS_ERROR })
+      if (mountedRef.current) dispatch({ type: 'access-error', message: REQUEST_ACCESS_ERROR })
     }
   }
 
   const close = () => dispatch({ type: 'close-access' })
 
   return (
-    <div className="access-overlay">
-      <button type="button" className="access-overlay__backdrop" aria-label="Close request access" onClick={close} />
-      <div className="access-overlay__dialog" role="dialog" aria-modal="true" aria-labelledby="access-title">
-        <h2 id="access-title">Request access</h2>
-        {access === 'success' ? (
-          <div>
-            <p>Request received.</p>
-            <button type="button" onClick={close}>Close</button>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} noValidate>
+    <dialog
+      ref={dialogRef}
+      className="access-overlay__dialog"
+      aria-labelledby="access-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        close()
+      }}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return
+        const rect = event.currentTarget.getBoundingClientRect()
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close()
+      }}
+    >
+      <div className="access-overlay__header">
+        <h2 id="access-title">Request a Demo</h2>
+        <button type="button" aria-label="Close demo request" onClick={close}>Close</button>
+      </div>
+      {access === 'success' ? (
+        <p ref={successRef} className="access-overlay__success" role="status" tabIndex={-1}>Request received.</p>
+      ) : (
+        <form onSubmit={onSubmit} noValidate>
+          {Object.values(fieldErrors).some(Boolean) ? (
+            <p className="access-overlay__error" role="alert">Please correct the highlighted fields.</p>
+          ) : null}
             <label htmlFor="access-name">
               Name
               <input
                 id="access-name"
+                ref={nameRef}
                 autoComplete="name"
                 value={form.name}
                 onChange={(event) => update('name', event.target.value)}
@@ -85,13 +120,12 @@ export const AccessOverlay = ({ access, accessError, dispatch }: Props) => {
               />
               {fieldErrors.email ? <small id="access-email-error">{fieldErrors.email}</small> : null}
             </label>
-            {access === 'error' && accessError ? <p className="access-overlay__error">{accessError}</p> : null}
+            {access === 'error' && accessError ? <p className="access-overlay__error" role="alert">{accessError}</p> : null}
             <button type="submit" disabled={access === 'submitting'}>
               {access === 'submitting' ? 'Sending' : 'Send request'}
             </button>
-          </form>
-        )}
-      </div>
-    </div>
+        </form>
+      )}
+    </dialog>
   )
 }

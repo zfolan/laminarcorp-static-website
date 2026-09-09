@@ -1,50 +1,35 @@
-# React + TypeScript + Vite
+# Laminar website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Single-page React, TypeScript and Vite marketing site for Laminar’s household-first portfolio management and implementation workflow.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```sh
+npm ci
+npm run dev -- --host 127.0.0.1
+npm run test
+npm run build
+npm run lint
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Use the local URL printed by Vite. Production output is written to `dist/`.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## Content and presentation
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+- `src/pages/StagePage.tsx` composes the logo-led opening and five sections: Households → Analytics → Rebalance → Proposals → Implementation.
+- `src/data/stageBook.ts` owns the main copy and synthetic portfolio, proposal and deployment examples. The detailed holdings and trade tables are labeled excerpts, not complete ledgers or working product controls.
+- `src/components/stage/scenes/` contains the product illustrations; the sibling `laminar-frontend-ui` repository is their visual reference, not a runtime dependency.
+- `src/index.css` and `.21st/design.json` define the existing dark visual language and durable design decisions. Preserve the animated logo’s geometry and static reduced-motion fallback.
+- `/#households`, `/#analytics`, `/#rebalance`, `/#proposals` and `/#implementation` link directly to workflow stages. `/?motion=reduce` forces the static presentation; OS reduced-motion preferences are also respected.
+- Reloading returns to the top and clears the section hash while preserving query parameters. Opening a section link directly or using the workflow navigation still goes to that section.
+- Page/social metadata lives in `index.html`, the `StagePage` metadata call and `public/laminar-social.svg`.
+
+## Demo requests
+
+All Request a Demo buttons open the same native modal form. Submission sends a JSON `POST /api/request-access` with trimmed `name`, `email` and `firm` fields. The existing endpoint and internal access identifiers are intentionally retained.
+
+This repository does **not** implement that endpoint. Production hosting must supply it; frontend success/error checks using intercepted responses do not establish real lead delivery. Do not replace a missing service with a fake success or send invented test leads to the live endpoint.
+
+## Verification
+
+Vitest covers form validation, retry and stale-response behavior, scroll-hint navigation, illustration aggregate consistency, routing and canvas behavior. The jsdom dialog shim does not prove browser focus isolation: verify native keyboard interaction, focus restoration and responsive layouts in Chromium as well. Check the site at desktop, tablet and narrow phone widths, with motion enabled and reduced.

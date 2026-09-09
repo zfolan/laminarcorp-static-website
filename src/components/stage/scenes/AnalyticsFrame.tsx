@@ -102,7 +102,7 @@ export const AnalyticsFrame = () => {
               <span className="overview__legend-item overview__legend-item--model">Model</span>
             </div>
           </header>
-          <div className="overview__sectors">
+          <div className="overview__sectors" role="region" tabIndex={0} aria-label="Illustrative sector allocation drift">
             <div className="overview__sectors-head" aria-hidden="true">
               <span>Sector</span>
               <span>Weight comparison</span>
@@ -178,8 +178,8 @@ export const AnalyticsFrame = () => {
         <article className="overview__card">
           <header className="overview__card-head">
             <div>
-              <h5>All Holdings</h5>
-              <p>Largest deviations first · sorted by portfolio impact</p>
+              <h5>Selected holdings</h5>
+              <p>Selected holdings from the illustrative portfolio</p>
             </div>
           </header>
           <div className="overview__holdings-summary">
@@ -187,7 +187,7 @@ export const AnalyticsFrame = () => {
             <span>Off model <b>{sleeves.offModel.count} · {compact(sleeves.offModel.value)}</b></span>
             <span>Largest impact <b>{impact.ticker} · {impact.sleeve} · {signedPct(impact.drift)}</b></span>
           </div>
-          <div className="overview__grid">
+          <div className="overview__grid" role="region" tabIndex={0} aria-label="Selected illustrative holdings">
             <div className="overview__head" aria-hidden="true">
               {holdingColumns.map((column) => (
                 <span key={column}>{column}</span>
@@ -224,11 +224,11 @@ export const AnalyticsFrame = () => {
               <p>Top holdings by market value</p>
             </div>
           </header>
-          <div className="overview__exposures">
+          <div className="overview__exposures" role="region" tabIndex={0} aria-label="Illustrative largest exposures">
             <div className="overview__exposures-head" aria-hidden="true">
               <span>Security</span>
               <span>Market value</span>
-              <span>Account %</span>
+              <span>Household %</span>
             </div>
             {largest.map((row) => (
               <div key={row.ticker} className="overview__exposure">

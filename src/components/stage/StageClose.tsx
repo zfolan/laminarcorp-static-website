@@ -15,7 +15,7 @@ export const StageClose = ({
   reducedMotion?: boolean
   onRequestAccess: () => void
 }) => (
-  <section id="close" className="stage-close" aria-label="Request access">
+  <section id="close" className="stage-close" aria-labelledby="stage-close-title">
     <motion.div
       className="stage-close__in"
       initial={reducedMotion ? 'show' : 'hidden'}
@@ -43,6 +43,11 @@ export const StageClose = ({
           </motion.div>
         ))}
       </div>
+      <p className="stage-statement">One system. One workflow. One view of the portfolio.</p>
+      <div className="stage-close__cta">
+        <h2 id="stage-close-title">See What Laminar Can Do for Your Team</h2>
+        <p>Discover how Laminar can streamline portfolio management from household analysis through implementation.</p>
+      </div>
       <motion.button
         type="button"
         className="stage-access-trigger"
@@ -50,7 +55,7 @@ export const StageClose = ({
         transition={{ duration: reducedMotion ? 0 : 0.55, ease }}
         onClick={onRequestAccess}
       >
-        Request access
+        Request a Demo
       </motion.button>
     </motion.div>
   </section>

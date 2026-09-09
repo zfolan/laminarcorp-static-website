@@ -5,7 +5,7 @@ export const StageChrome = ({ onRequestAccess }: { onRequestAccess: () => void }
       <span>LAMINAR</span>
     </p>
     <button type="button" className="stage-access-trigger" onClick={onRequestAccess}>
-      Request access
+      Request a Demo
     </button>
   </div>
 )

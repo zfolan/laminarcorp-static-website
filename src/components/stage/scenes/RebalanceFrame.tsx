@@ -158,7 +158,7 @@ export const RebalanceFrame = () => {
         <div className="rebalance__toolbar">
           <div>
             <h4>Trades by account</h4>
-            <p>{metrics.trades} trades · {accountsInHousehold} accounts · tax in view</p>
+            <p>Selected trades from 3 of 5 accounts · 8 of 38 proposed trades shown</p>
           </div>
         </div>
 
@@ -212,14 +212,8 @@ export const RebalanceFrame = () => {
               <span className="rebalance__account-cash">
                 Available cash <b>{whole(account.cash)}</b>
               </span>
-              <span className="rebalance__account-cash">
-                Net change <b className={`rebalance__tone--${impactTone(account.net)}`}>{signedWhole(account.net)}</b>
-              </span>
-              <span className="rebalance__account-cash">
-                Total after <b>{whole(account.cash + account.net)}</b>
-              </span>
             </div>
-            <div className="rebalance__grid">
+            <div className="rebalance__grid" role="region" tabIndex={0} aria-label={`Selected illustrative trades for ${account.type} ${account.id}`}>
               <div className="rebalance__head" aria-hidden="true">
                 {columns.map((column) => (
                   <span key={column}>{column}</span>

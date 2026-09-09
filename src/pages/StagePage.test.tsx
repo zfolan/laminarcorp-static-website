@@ -1,8 +1,8 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { StrictMode } from 'react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { Link, MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { STAGE_CAPTIONS, STAGE_INTRO, STAGE_OUTRO, STAGE_PREFACE } from '../data/stageBook'
 import { StagePage } from './StagePage'
 
 afterEach(() => {
@@ -20,32 +20,14 @@ afterEach(() => {
 })
 
 const renderStage = () => render(
-  <MemoryRouter>
-    <StagePage />
-  </MemoryRouter>,
+  <StrictMode>
+    <MemoryRouter>
+      <StagePage />
+    </MemoryRouter>
+  </StrictMode>,
 )
 
 describe('StagePage', () => {
-  it('shows the aether hero without expanding a product panel', () => {
-    renderStage()
-    expect(screen.getByRole('heading', { name: 'LAMINAR' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /laminar/i })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Request access' })).toHaveLength(2)
-    expect(screen.getByRole('heading', { name: STAGE_OUTRO[0].title })).toBeInTheDocument()
-    expect(screen.getByText(STAGE_OUTRO[0].body)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: STAGE_OUTRO[1].title })).toBeInTheDocument()
-    expect(screen.getByText(STAGE_OUTRO[1].body)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Households' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Rebalance' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Analytics' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /close .* preview/i })).not.toBeInTheDocument()
-    expect(document.getElementById('households')).toBeInTheDocument()
-    expect(document.getElementById('rebalance')).toBeInTheDocument()
-    expect(document.getElementById('analytics')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: STAGE_INTRO.title })).toBeInTheDocument()
-    expect(screen.getByText(STAGE_INTRO.lead)).toBeInTheDocument()
-    expect(screen.getByText(STAGE_INTRO.body)).toBeInTheDocument()
-  })
 
   it('keeps the aether field decorative and still works when canvas context is missing', () => {
     renderStage()
@@ -143,84 +125,106 @@ describe('StagePage', () => {
 
 
 
-  it('keeps product sections in the page without hero shortcuts', () => {
+
+  it('associates validation errors with fields and does not submit invalid input', async () => {
+    const user = userEvent.setup()
+    const submit = vi.spyOn(window, 'fetch')
     renderStage()
-    expect(document.getElementById('households')).toContainElement(screen.getByText(STAGE_CAPTIONS.households))
-    expect(document.getElementById('rebalance')).toContainElement(screen.getByText(STAGE_CAPTIONS.rebalance))
-    expect(document.getElementById('analytics')).toContainElement(screen.getByText(STAGE_CAPTIONS.analytics))
+    await user.click(screen.getAllByRole('button', { name: 'Request a Demo' })[0])
+    const dialog = screen.getByRole('dialog', { name: 'Request a Demo' })
+    expect(within(dialog).getByLabelText(/^name/i)).toHaveFocus()
+    await user.click(within(dialog).getByRole('button', { name: 'Send request' }))
+    expect(within(dialog).getByRole('alert')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText(/^name/i)).toHaveAccessibleDescription('Enter your name.')
+    expect(within(dialog).getByLabelText(/^firm/i)).toHaveAccessibleDescription('Enter your firm name.')
+    expect(within(dialog).getByLabelText(/email/i)).toHaveAccessibleDescription('Enter a valid work email.')
+    expect(submit).not.toHaveBeenCalled()
   })
 
-  it('renders the household library in the page', () => {
+  it('submits trimmed values and focuses confirmation on success', async () => {
+    const user = userEvent.setup()
+    const submit = vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
     renderStage()
-    const library = within(document.getElementById('households') as HTMLElement)
-    expect(library.getByRole('heading', { name: STAGE_PREFACE.households![0].title })).toBeInTheDocument()
-    expect(library.getByText(STAGE_PREFACE.households![0].body)).toBeInTheDocument()
-    expect(library.getByText('Chen Family')).toBeInTheDocument()
-    expect(library.getByText('Rivera Household')).toBeInTheDocument()
-    expect(library.getAllByText('At Risk').length).toBeGreaterThan(0)
-    expect(library.getByText(/on target/i)).toBeInTheDocument()
-    expect(screen.queryByText('Upload CSV')).not.toBeInTheDocument()
-    expect(library.queryByText(/drift bands/i)).not.toBeInTheDocument()
-    expect(library.queryByText(/all ias/i)).not.toBeInTheDocument()
+    await user.click(screen.getAllByRole('button', { name: 'Request a Demo' })[0])
+    await user.type(screen.getByLabelText(/^name/i), ' Example Advisor ')
+    await user.type(screen.getByLabelText(/email/i), 'advisor@example.com')
+    await user.type(screen.getByLabelText(/^firm/i), ' Example Firm ')
+    await user.click(screen.getByRole('button', { name: 'Send request' }))
+    const confirmation = await screen.findByRole('status')
+    expect(confirmation).toHaveTextContent('Request received.')
+    expect(confirmation).toHaveFocus()
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(submit).toHaveBeenCalledWith('/api/request-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Example Advisor', email: 'advisor@example.com', firm: 'Example Firm' }),
+    })
+    await user.click(screen.getByRole('button', { name: 'Close demo request' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('renders the rebalance workspace in the page', () => {
-    renderStage()
-    const rebalance = within(document.getElementById('rebalance') as HTMLElement)
-    expect(rebalance.getByRole('heading', { name: STAGE_PREFACE.rebalance![0].title })).toBeInTheDocument()
-    expect(rebalance.getByRole('heading', { name: 'Tax-Aware Portfolio Management' })).toBeInTheDocument()
-    expect(rebalance.getByRole('heading', { name: 'Intelligent Asset Location' })).toBeInTheDocument()
-    expect(rebalance.getByRole('heading', { name: 'Exception-Based Portfolio Management' })).toBeInTheDocument()
-    expect(rebalance.getByText(STAGE_PREFACE.rebalance![0].body)).toBeInTheDocument()
-    expect(rebalance.getByText('Allocation & cash')).toBeInTheDocument()
-    expect(rebalance.getByText(/RRSP/)).toBeInTheDocument()
-    expect(rebalance.getByText(/TFSA/)).toBeInTheDocument()
-    expect(rebalance.getByText(/CAD TAXABLE/)).toBeInTheDocument()
-    expect(rebalance.getByText('ZCS')).toBeInTheDocument()
-    expect(rebalance.getAllByText('SELL').length).toBeGreaterThan(0)
-    expect(rebalance.getAllByText('BUY').length).toBeGreaterThan(0)
-    expect(rebalance.getAllByText('Account value').length).toBeGreaterThan(0)
-    expect(rebalance.queryByText('Review & validate')).not.toBeInTheDocument()
-    expect(rebalance.queryByText('Save adjustments')).not.toBeInTheDocument()
-  })
-
-  it('renders the household overview in the page', () => {
-    renderStage()
-    const overview = within(document.getElementById('analytics') as HTMLElement)
-    expect(overview.getByRole('heading', { name: STAGE_PREFACE.analytics![0].title })).toBeInTheDocument()
-    expect(overview.getByText(STAGE_PREFACE.analytics![0].body)).toBeInTheDocument()
-    expect(overview.getByRole('heading', { name: STAGE_PREFACE.analytics![1].title })).toBeInTheDocument()
-    expect(overview.getByText(/sector allocation drift/i)).toBeInTheDocument()
-    expect(overview.getByText(/currency exposure/i)).toBeInTheDocument()
-    expect(overview.getByText(/largest exposures/i)).toBeInTheDocument()
-    expect(overview.getByText(/all holdings/i)).toBeInTheDocument()
-    expect(overview.getAllByText('CAD').length).toBeGreaterThan(0)
-    expect(overview.getAllByText('USD').length).toBeGreaterThan(0)
-    expect(overview.getByText('Chen Family')).toBeInTheDocument()
-    expect(screen.queryByText('Whole Book')).not.toBeInTheDocument()
-    expect(screen.queryByText('Add note')).not.toBeInTheDocument()
-  })
-
-  it('validates the access form in the overlay without leaving the page', async () => {
+  it('handles native cancellation and dismisses only clicks outside the dialog panel', async () => {
     const user = userEvent.setup()
     renderStage()
-    await user.click(screen.getAllByRole('button', { name: 'Request access' })[0])
-    expect(screen.getByRole('dialog', { name: 'Request access' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Send request' }))
-    expect(screen.getByText('Enter your name.')).toBeInTheDocument()
-    expect(screen.getByText(STAGE_CAPTIONS.households)).toBeInTheDocument()
+    const opener = screen.getAllByRole('button', { name: 'Request a Demo' })[0]
+    await user.click(opener)
+    const dialog = screen.getByRole('dialog', { name: 'Request a Demo' })
+    const cancel = new Event('cancel', { bubbles: false, cancelable: true })
+    fireEvent(dialog, cancel)
+    expect(cancel.defaultPrevented).toBe(true)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(opener)
+    const reopened = screen.getByRole('dialog', { name: 'Request a Demo' })
+    vi.spyOn(reopened, 'getBoundingClientRect').mockReturnValue({
+      x: 100, y: 100, left: 100, top: 100, right: 500, bottom: 600,
+      width: 400, height: 500, toJSON: () => ({}),
+    })
+    await user.click(within(reopened).getByLabelText(/^name/i))
+    fireEvent.click(reopened, { clientX: 110, clientY: 110 })
+    expect(reopened).toBeInTheDocument()
+    fireEvent.click(reopened, { clientX: 20, clientY: 20 })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('shows confirmation on success', async () => {
+  it.each(['resolve', 'reject'] as const)('ignores an old submission that will %s after closing and reopening', async (outcome) => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+    let finish!: () => void
+    const pending = new Promise<Response>((resolve, reject) => {
+      finish = outcome === 'resolve'
+        ? () => resolve(new Response(null, { status: 204 }))
+        : () => reject(new Error('Network unavailable'))
+    })
+    const submit = vi.spyOn(window, 'fetch')
+      .mockReturnValueOnce(pending)
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
     renderStage()
-    await user.click(screen.getAllByRole('button', { name: 'Request access' })[0])
-    await user.type(screen.getByLabelText(/^name/i), 'Nolan Patel')
-    await user.type(screen.getByLabelText(/email/i), 'nolan@example.com')
-    await user.type(screen.getByLabelText(/^firm/i), 'Northstar Advisory')
+    const opener = screen.getAllByRole('button', { name: 'Request a Demo' })[0]
+    await user.click(opener)
+    await user.type(screen.getByLabelText(/^name/i), 'Previous Advisor')
+    await user.type(screen.getByLabelText(/email/i), 'previous@example.com')
+    await user.type(screen.getByLabelText(/^firm/i), 'Previous Firm')
     await user.click(screen.getByRole('button', { name: 'Send request' }))
-    expect(await screen.findByText(/request received/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sending' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Close demo request' }))
+    await user.click(opener)
+    const freshDialog = screen.getByRole('dialog', { name: 'Request a Demo' })
+    expect(within(freshDialog).getByLabelText(/^name/i)).toHaveValue('')
+    await user.type(within(freshDialog).getByLabelText(/^name/i), 'Current Advisor')
+    await act(async () => {
+      finish()
+      await pending.catch(() => {})
+    })
+    expect(freshDialog).toBeInTheDocument()
+    expect(within(freshDialog).getByLabelText(/^name/i)).toHaveValue('Current Advisor')
+    expect(within(freshDialog).queryByRole('alert')).not.toBeInTheDocument()
+    expect(within(freshDialog).queryByRole('status')).not.toBeInTheDocument()
+    expect(within(freshDialog).getByRole('button', { name: 'Send request' })).toBeEnabled()
+    await user.type(within(freshDialog).getByLabelText(/email/i), 'current@example.com')
+    await user.type(within(freshDialog).getByLabelText(/^firm/i), 'Current Firm')
+    await user.click(within(freshDialog).getByRole('button', { name: 'Send request' }))
+    expect(await within(freshDialog).findByRole('status')).toHaveTextContent('Request received.')
+    expect(submit).toHaveBeenCalledTimes(2)
   })
 
   it('reveals an aether scroll hint after five seconds at the top of the page', () => {
@@ -231,6 +235,20 @@ describe('StagePage', () => {
       vi.advanceTimersByTime(5000)
     })
     expect(screen.getByRole('button', { name: 'Scroll down' })).toBeInTheDocument()
+  })
+
+  it('hides an already-visible scroll hint when navigating to a section hash', () => {
+    vi.useFakeTimers()
+    render(
+      <MemoryRouter>
+        <StagePage />
+        <Link to="/#intro">Navigate to platform</Link>
+      </MemoryRouter>,
+    )
+    act(() => vi.advanceTimersByTime(5000))
+    expect(screen.getByRole('button', { name: 'Scroll down' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: 'Navigate to platform' }))
+    expect(screen.queryByRole('button', { name: 'Scroll down' })).not.toBeInTheDocument()
   })
 
   it('does not show the scroll hint if the page has already moved', () => {
@@ -277,19 +295,28 @@ describe('StagePage', () => {
     )
     expect(document.querySelector('[data-aether-field]')).toHaveClass('aether-field--still')
     expect(document.getElementById('households')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: STAGE_INTRO.title })).toBeInTheDocument()
+    expect(document.getElementById('intro')).toBeVisible()
+    expect(within(screen.getByRole('region', { name: 'Laminar Apex' })).getByRole('button', { name: 'Request a Demo' })).toBeVisible()
   })
 
-  it('keeps the form and shows a retryable error when submit fails', async () => {
+  it('retains submitted values and allows retry after a server error', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(null, { status: 500 }))
+    const submit = vi.spyOn(window, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 500 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
     renderStage()
-    await user.click(screen.getAllByRole('button', { name: 'Request access' })[1])
-    await user.type(screen.getByLabelText(/^name/i), 'Nolan Patel')
-    await user.type(screen.getByLabelText(/email/i), 'nolan@example.com')
-    await user.type(screen.getByLabelText(/^firm/i), 'Northstar Advisory')
+    await user.click(screen.getAllByRole('button', { name: 'Request a Demo' })[0])
+    await user.type(screen.getByLabelText(/^name/i), 'Example Advisor')
+    await user.type(screen.getByLabelText(/email/i), 'advisor@example.com')
+    await user.type(screen.getByLabelText(/^firm/i), 'Example Firm')
     await user.click(screen.getByRole('button', { name: 'Send request' }))
-    expect(await screen.findByText('Could not send your request. Try again.')).toBeInTheDocument()
-    expect(screen.getByLabelText(/^name/i)).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not send your request. Try again.')
+    expect(screen.getByLabelText(/^name/i)).toHaveValue('Example Advisor')
+    expect(screen.getByLabelText(/email/i)).toHaveValue('advisor@example.com')
+    expect(screen.getByLabelText(/^firm/i)).toHaveValue('Example Firm')
+    expect(screen.getByRole('button', { name: 'Send request' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Send request' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Request received.')
+    expect(submit).toHaveBeenCalledTimes(2)
   })
 })

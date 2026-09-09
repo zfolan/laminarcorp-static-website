@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { chordNearFill, diskTouchesSegment, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
+import { ambientOpacityAt, chordNearFill, diskTouchesSegment, mergeClosePoints, mouseNearMark, sampleInteriorMesh, sampleLogoOutline, segmentHitsFill, sleeveTone, unboundCap, unboundLinkPairs } from './AetherCanvas'
+
+describe('ambient entrance', () => {
+  it('stays hidden for the logo, fades alongside the text, and stays visible afterward', () => {
+    expect(ambientOpacityAt(0)).toBe(0)
+    expect(ambientOpacityAt(1120)).toBe(0)
+    expect(ambientOpacityAt(1985)).toBeCloseTo(0.5)
+    expect(ambientOpacityAt(2850)).toBe(1)
+    expect(ambientOpacityAt(10_000)).toBe(1)
+  })
+})
 
 
 

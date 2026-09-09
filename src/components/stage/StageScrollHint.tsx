@@ -9,7 +9,10 @@ export const StageScrollHint = ({ reducedMotion }: { reducedMotion: boolean }) =
   const [shown, setShown] = useState(false)
 
   useEffect(() => {
-    if (location.hash || window.scrollY > SCROLL_SLACK) return
+    if (location.hash || window.scrollY > SCROLL_SLACK) {
+      setShown(false)
+      return
+    }
 
     let dismissed = false
     const dismiss = () => {

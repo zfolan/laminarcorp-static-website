@@ -8,9 +8,6 @@ import '@fontsource/ibm-plex-mono/500.css'
 import App from './App'
 import './index.css'
 
-if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
-if (!window.location.hash) window.scrollTo(0, 0)
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><App /></React.StrictMode>,
 )

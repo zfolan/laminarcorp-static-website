@@ -8,10 +8,9 @@ const renderAt = (path: string) => {
 }
 
 describe('public routes', () => {
-  it('renders the stage at / with no request-access route', () => {
+  it('renders the stage at /', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { name: 'LAMINAR' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Platform' })).not.toBeInTheDocument()
   })
 
   it('renders a recovery route for unknown paths', () => {

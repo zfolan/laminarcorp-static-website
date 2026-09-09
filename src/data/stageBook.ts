@@ -36,70 +36,75 @@ export type AccountGroup = {
   id: string
   value: number
   cash: number
-  net: number
   color: string
   trades: TradeRow[]
 }
 
+export const STAGE_LABELS: Record<SceneId, string> = {
+  households: 'Households',
+  analytics: 'Analytics',
+  rebalance: 'Rebalance',
+  proposals: 'Proposals',
+  implementation: 'Implementation',
+}
+
 export const STAGE_CAPTIONS: Record<SceneId, string> = {
-  households: 'The book, and who needs attention.',
-  rebalance: 'Propose the trades, with tax in view.',
-  analytics: 'Insights, from every angle.',
+  households: 'Understand the book.',
+  analytics: 'See what needs attention.',
+  rebalance: 'Determine what needs to change.',
+  proposals: 'Turn decisions into recommendations.',
+  implementation: 'Implement efficiently at scale.',
 }
 
 export const STAGE_INTRO = {
-  title: 'An Advanced Portfolio Management System Built for Modern Wealth Management',
-  lead: 'Our portfolio management system is designed to transform the way investment portfolios are managed—from portfolio construction and household-level analysis to tax-aware rebalancing, trade generation, and implementation.',
-  body: 'Rather than simply identifying portfolio drift, the system helps determine what needs to change, where the change should occur, and how it can be implemented most efficiently.',
+  title: 'One connected portfolio management workflow.',
+  lead: 'Laminar connects portfolio construction, household-level analytics, tax-aware rebalancing, asset location, proposals, trade generation and implementation for modern wealth management teams.',
+  body: 'See what needs attention. Determine what needs to change. Implement it efficiently.',
 }
 
 export type StageBlurb = { title: string; body: string }
 
-export const STAGE_PREFACE: Partial<Record<SceneId, StageBlurb[]>> = {
+export const STAGE_PREFACE: Record<SceneId, StageBlurb[]> = {
   households: [
     {
-      title: 'One Household. One Portfolio. One Intelligent System.',
-      body: 'Traditional portfolio management tools often analyze accounts individually. Our system takes a household-level approach, allowing portfolio managers to view and manage multiple accounts as one integrated investment portfolio.',
-    },
-  ],
-  rebalance: [
-    {
-      title: 'Intelligent Rebalancing',
-      body: 'The system determines what to trade, how much, and in which accounts—working through cash, CAD/USD, and lot sizes, and flagging exceptions so the process stays consistent and controlled.',
-    },
-    {
-      title: 'Tax-Aware Portfolio Management',
-      body: 'The system folds estimated capital gains, wash sales, and account-specific tax opportunities into the rebalance—so the question is the most efficient way to implement the change across the household, not only what to sell.',
-    },
-    {
-      title: 'Intelligent Asset Location',
-      body: 'The system considers where holdings sit, not only what is owned—registered and non-registered—so placement stays tax-efficient at the household level.',
-    },
-    {
-      title: 'Exception-Based Portfolio Management',
-      body: 'The system surfaces the issues that need judgment—concentration, cash, taxable gains, currency, drift, restrictions, model breaks, trading limits, household overlap—so the manager can review, modify, and approve.',
+      title: 'One Household. One Portfolio. One Intelligent View.',
+      body: 'Start with the household, not the account. Bring taxable and registered accounts together to understand allocation, concentration, cash, currency and model alignment across the relationship—and prioritize the households that need attention.',
     },
   ],
   analytics: [
     {
-      title: 'One View of the Household',
-      body: 'The system brings the household together in a single view—so you can see the full picture, not a pile of separate accounts.',
+      title: 'See the Portfolio From Every Angle.',
+      body: 'Bring allocation, model alignment, concentration, cash, CAD/USD exposure, estimated tax impact and exceptions into the same household review. Not every portfolio needs attention. Laminar helps you find the ones that do.',
     },
+  ],
+  rebalance: [
     {
-      title: 'See How the Book Stands',
-      body: 'The system shows the household as it is, against how it should look—so the gaps are obvious, and so is what matters first.',
+      title: "Don't Just Find the Drift. Solve It.",
+      body: 'Determine what to trade, how much to trade and where to trade it across the household. Bring account types, models, taxes, restrictions, cash requirements, CAD/USD exposure and trading rules into the decision before generating proposed trades.',
+    },
+  ],
+  proposals: [
+    {
+      title: 'Turn Portfolio Decisions Into Client-Ready Recommendations.',
+      body: 'Show clients where they are today, what is changing, why it is changing and where the portfolio is going. Connect the proposed trades to the expected target state in a clear recommendation.',
+    },
+  ],
+  implementation: [
+    {
+      title: 'From Investment Decision to Executable Trade.',
+      body: 'Translate portfolio decisions into account-level trades, manage bulk trading across households and control staged implementation through the Deployment Centre. Review, modify and approve before execution, with visibility into what is ready and what still needs attention.',
     },
   ],
 }
 
 export const STAGE_OUTRO: StageBlurb[] = [
   {
-    title: 'Designed to Scale',
-    body: 'The system lets teams manage more assets and more complex households without a matching rise in workload—so professionals spend time on investment decisions, client relationships, tax and planning, risk, and oversight.',
+    title: 'Manage More Without Adding More Manual Work.',
+    body: 'As households and account complexity grow, keep the workflow connected so your team can spend more time on investment decisions, client relationships, financial planning, tax strategy, risk management and oversight.',
   },
   {
-    title: 'More Than a Rebalancing Tool',
-    body: 'It is an intelligent portfolio management and implementation platform—connecting construction, household analysis, risk, tax, and trade execution in one workflow. The goal is better information, better implementation, and more time managing client wealth.',
+    title: 'More Than a Rebalancing Tool.',
+    body: 'Portfolio construction, household analytics, risk and exceptions, tax and asset location, rebalancing, proposals, trade generation and implementation—one connected workflow.',
   },
 ]
 
@@ -120,13 +125,27 @@ const chen: HouseholdRow = {
   equityModel: eqLm,
   fixedIncomeModel: fiModel,
   target: target80,
-  current: { equity: 0.306, fixedIncome: 0.604, cash: 0.091 },
+  current: { equity: 1_022_000 / 3_340_000, fixedIncome: 2_017_000 / 3_340_000, cash: 301_000 / 3_340_000 },
 }
 
 export const stageBook = {
   strip: { atRisk: 5, review: 0, onTarget: 0, households: 5, totalAum: 8_390_000 },
   households: [
     chen,
+    {
+      name: 'Okoye Trust',
+      code: 'OK-0912',
+      accounts: 3,
+      aum: 1_060_000,
+      drift: 0.322,
+      equityDrift: 0.312,
+      fixedIncomeDrift: 0.322,
+      status: 'At Risk' as const,
+      equityModel: eqLm,
+      fixedIncomeModel: fiModel,
+      target: target80,
+      current: { equity: 0.488, fixedIncome: 0.512, cash: 0 },
+    },
     {
       name: 'Rivera Household',
       code: 'RV-1184',
@@ -156,20 +175,6 @@ export const stageBook = {
       current: { equity: 0.572, fixedIncome: 0.403, cash: 0.025 },
     },
     {
-      name: 'Okoye Trust',
-      code: 'OK-0912',
-      accounts: 3,
-      aum: 1_060_000,
-      drift: 0.322,
-      equityDrift: 0.312,
-      fixedIncomeDrift: 0.322,
-      status: 'At Risk' as const,
-      equityModel: eqLm,
-      fixedIncomeModel: fiModel,
-      target: target80,
-      current: { equity: 0.488, fixedIncome: 0.512, cash: 0 },
-    },
-    {
       name: 'Berg Holdings',
       code: 'BG-5520',
       accounts: 4,
@@ -190,21 +195,20 @@ export const stageBook = {
     accountsInHousehold: chen.accounts,
     current: chen.current,
     target: chen.target,
-    tradeImpact: { equity: 1_650_000, fixedIncome: -1_382_000, cash: -40_178 },
+    tradeImpact: { equity: 1_650_000, fixedIncome: -1_382_400, cash: -267_600 },
     projected: { equity: 0.800, fixedIncome: 0.190, cash: 0.010 },
     sleeveValues: {
       equity: { current: 1_022_000, projected: 2_672_000, target: 2_672_000 },
-      fixedIncome: { current: 2_017_000, projected: 635_000, target: 635_000 },
-      cash: { current: 304_000, projected: 33_400, target: 33_400 },
+      fixedIncome: { current: 2_017_000, projected: 634_600, target: 634_600 },
+      cash: { current: 301_000, projected: 33_400, target: 33_400 },
     },
-    metrics: { trades: 38, buys: 24, sells: 14, netCash: -40_178, usdNet: -2_140 },
+    metrics: { trades: 38, buys: 24, sells: 14, netCash: -267_600, usdNet: -2_140 },
     accounts: [
       {
         type: 'RRSP',
         id: '8821',
         value: 237_800,
         cash: 18_420,
-        net: -12_386,
         color: '#3b82f6',
         trades: [
           { ticker: 'ZCS', name: 'BMO Short Corporate Bond ETF', action: 'SELL' as const, qty: -3144, sharesBefore: 4200, price: 13.95, currency: 'CAD' as const, tradeValue: -43_859, capitalGain: 12, deviation: 'FI +15.0%', status: 'Review' as const },
@@ -218,7 +222,6 @@ export const stageBook = {
         id: '4410',
         value: 73_453,
         cash: 8_210,
-        net: 51,
         color: '#22c55e',
         trades: [
           { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -5015, sharesBefore: 5015, price: 1, currency: 'CAD' as const, tradeValue: -5_015, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
@@ -230,7 +233,6 @@ export const stageBook = {
         id: '2294',
         value: 102_699,
         cash: 41_200,
-        net: 17_186,
         color: '#0891B2',
         trades: [
           { ticker: 'DYN6004', name: 'Dynamic Power American Growth', action: 'SELL' as const, qty: -32263, sharesBefore: 32263, price: 1, currency: 'CAD' as const, tradeValue: -32_263, capitalGain: 0, deviation: 'Off model', status: 'Off Model' as const },
@@ -246,7 +248,7 @@ export const stageBook = {
     sleeves: {
       equity: { value: 1_022_000, weight: chen.current.equity, target: chen.target.equity },
       fixedIncome: { value: 2_017_000, weight: chen.current.fixedIncome, target: chen.target.fixedIncome },
-      cash: { value: 304_000, weight: chen.current.cash, target: chen.target.cash },
+      cash: { value: 301_000, weight: chen.current.cash, target: chen.target.cash },
       offModel: { value: 110_000, weight: 0.033, count: 1 },
     },
     drift: chen.drift,
@@ -274,6 +276,14 @@ export const stageBook = {
       { ticker: 'DYN6004', name: 'Dynamic Power American Growth', value: 227_000, weight: 0.068 },
       { ticker: 'XSH', name: 'iShares Core Canadian SHT ETF', value: 201_000, weight: 0.06 },
       { ticker: 'VSC', name: 'Vanguard CDN SHT TRM BD ETF', value: 194_000, weight: 0.058 },
+    ],
+  },
+  proposal: { investmentAmount: 100_000, client: 'Chen Family' },
+  implementation: {
+    events: [
+      { event: 1, date: '2026-10-01', weight: 0.3, releaseEstimate: 30_000, status: 'Scheduled' },
+      { event: 2, date: '2026-11-01', weight: 0.3, releaseEstimate: 30_000, status: 'Scheduled' },
+      { event: 3, date: '2026-12-01', weight: 0.4, releaseEstimate: 40_000, status: 'Scheduled' },
     ],
   },
 }

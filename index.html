@@ -4,17 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#07090d" />
-    <meta name="description" content="Portfolio operations for advisors: household books, rebalances, and tax-aware analytics." />
-    <meta property="og:title" content="Laminar Apex" />
-    <meta property="og:description" content="Portfolio operations for advisors: household books, rebalances, and tax-aware analytics." />
+    <meta name="description" content="Household-first portfolio management for modern wealth teams. Connect analytics, tax-aware rebalancing, proposals and implementation in one workflow." />
+    <meta property="og:title" content="Laminar | Portfolio Management &amp; Implementation" />
+    <meta property="og:description" content="Household-first portfolio management for modern wealth teams. Connect analytics, tax-aware rebalancing, proposals and implementation in one workflow." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/laminar-social.svg" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/laminar-mark.svg" type="image/svg+xml" />
-    <title>Laminar Apex</title>
+    <title>Laminar | Portfolio Management &amp; Implementation</title>
     <script>
       if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
-      const toTop = () => { if (!location.hash) scrollTo(0, 0) }
+      if (performance.getEntriesByType('navigation')[0]?.type === 'reload' && location.hash) {
+        history.replaceState(history.state, '', location.pathname + location.search)
+      }
+      const toTop = () => {
+        if (!location.hash) scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      }
       toTop()
       addEventListener('load', toTop)
     </script>

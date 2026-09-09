@@ -8,7 +8,7 @@ Generated from project sources at 2026-08-25T23:48:46.011Z.
 - Name: laminarcorp-static-website
 - Product type: Unknown
 - Stack: react, shadcn, tailwind-v4, vite
-- Color mode: light
+- Color mode: dark
 - Density: unknown
 
 ## Sources
@@ -44,5 +44,8 @@ Generated from project sources at 2026-08-25T23:48:46.011Z.
 
 ## Decisions
 
-- None recorded
+- Keep the logo-led opening and the five-stage household-to-implementation journey.
+- Use product-derived, synthetic illustrations rather than functional portfolio controls.
+- Preserve the existing animated-logo geometry and localized CTA blur.
+- Full current decisions are maintained in `.21st/design.json`.
 

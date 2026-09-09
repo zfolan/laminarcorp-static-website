@@ -60,6 +60,7 @@
     "avoid": []
   },
   "decisions": [
+    "Both Request access buttons use a 2px backdrop blur and a 65%-opaque canvas tint, confined to each button; keep their labels sharp.",
     "With motion enabled, the hero logo uses one continuous simulation at rest and on hover; SVG geometry is the sampling and clipping reference, not a second displayed foreground. Preserve the exact source polygon corners and the 3px contour. The shimmer reveals a uniform equilateral-triangle mesh with 22-unit spacing (28 in the Canvas 2D fallback), clipped to the glyph and drawn behind its outlines. Omit mesh node disks that touch the current simulated contour, including raster clearance, without removing their connecting lines. Interpolate outline color, opacity, and width at roughly 4px lighting intervals without adding simulation nodes or changing sweep speed. No widened edge masks, local grid shifts, or renderer switching. Keep wave-overlap gaps, pointer deformation, outline-only intervals, and the static reduced-motion fallback."
   ],
   "evidence": [

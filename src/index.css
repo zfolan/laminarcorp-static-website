@@ -537,7 +537,9 @@ button { color: inherit; }
   padding: 0 16px;
   border: 1px solid var(--border-strong);
   border-radius: 5px;
-  background: transparent;
+  background: color-mix(in srgb, var(--canvas) 65%, transparent);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   color: var(--platinum);
   cursor: pointer;
 }
